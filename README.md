@@ -1,6 +1,6 @@
 # Reusable Workflows
 
-[![Release](https://github.com/infinite-automations/workflows/actions/workflows/self-release.yml/badge.svg?branch=main)](https://github.com/infinite-automations/workflows/actions/workflows/self-release.yml)
+[![Release](https://github.com/infinite-automations/workflows/actions/workflows/self-release.yml/badge.svg)](https://github.com/infinite-automations/workflows/actions/workflows/self-release.yml)
 
 Centralized, reusable GitHub Actions workflows for the [infinite-automations](https://github.com/infinite-automations) organization.
 
