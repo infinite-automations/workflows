@@ -144,10 +144,10 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin "${INPUTS_DEPLOY_BRANCH}":"${INPUTS_DEPLOY_BRANCH}" 2>/dev/null || true
           if [[ "${SET_LATEST}" == "true" ]]; then
-            mike deploy --branch "${INPUTS_DEPLOY_BRANCH}" --update-aliases "${DEPLOY_VERSION}" latest
-            mike set-default --branch "${INPUTS_DEPLOY_BRANCH}" latest
+            mike deploy --push --branch "${INPUTS_DEPLOY_BRANCH}" --update-aliases "${DEPLOY_VERSION}" latest
+            mike set-default --push --branch "${INPUTS_DEPLOY_BRANCH}" latest
           else
-            mike deploy --branch "${INPUTS_DEPLOY_BRANCH}" --update-aliases "${DEPLOY_VERSION}"
+            mike deploy --push --branch "${INPUTS_DEPLOY_BRANCH}" --update-aliases "${DEPLOY_VERSION}"
           fi
 
       - name: Deploy Preview to GitHub Pages

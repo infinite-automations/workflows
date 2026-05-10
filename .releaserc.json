@@ -32,6 +32,12 @@
         ]
       }
     ],
-    "@semantic-release/github"
+    "@semantic-release/github",
+    [
+      "semantic-release-major-tag",
+      {
+        "customTags": ["v${major}", "v${major}.${minor}"]
+      }
+    ]
   ]
 }

@@ -74,6 +74,7 @@ jobs:
       extra-plugins: |
         conventional-changelog-conventionalcommits
         semantic-release-replace-plugin
+        semantic-release-major-tag
     secrets:
       APP_ID: ${{ secrets.APP_ID_SEMREL }}
       APP_PRIVATE_KEY: ${{ secrets.APP_KEY_SEMREL }}

@@ -39,8 +39,11 @@ jobs:
       extra-plugins: |
         conventional-changelog-conventionalcommits
         semantic-release-replace-plugin
+        semantic-release-major-tag
     permissions:
-      contents: read
+      contents: write
+      issues: write
+      pull-requests: write
 
   test-ci-terraform-module:
     name: Test ci-terraform-module
@@ -51,6 +54,7 @@ jobs:
       semrel-extra-plugins: |
         conventional-changelog-conventionalcommits
         semantic-release-replace-plugin
+        semantic-release-major-tag
     permissions:
       contents: write
       issues: write
@@ -67,6 +71,7 @@ jobs:
       semrel-extra-plugins: |
         conventional-changelog-conventionalcommits
         semantic-release-replace-plugin
+        semantic-release-major-tag
     permissions:
       contents: write
       issues: write
