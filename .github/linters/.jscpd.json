@@ -1,0 +1,6 @@
+{
+  "threshold": 0,
+  "absolute": true,
+  "gitignore": true,
+  "ignore": ["**/docs/docs/workflows/**"]
+}

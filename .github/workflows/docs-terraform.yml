@@ -1,0 +1,91 @@
+---
+# checkov:skip=CKV2_GHA_1:Permissions are set by the caller of this reusable workflow
+# Caller permissions:
+#   min (dry-run):  { contents: read }
+#   max (commit):   { contents: write }
+name: Documentation (Terraform)
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode (generate docs but do not commit)"
+        required: false
+        type: boolean
+        default: false
+      working-dir:
+        description: "Comma-separated list of directories to generate docs for"
+        required: false
+        type: string
+        default: "."
+      output-file:
+        description: "Output file name for generated docs"
+        required: false
+        type: string
+        default: "README.md"
+      output-method:
+        description: "Output method (inject or replace)"
+        required: false
+        type: string
+        default: "inject"
+      artifact-name:
+        description: "Name of the artifact to upload with generated docs"
+        required: false
+        type: string
+        default: "docs"
+    outputs:
+      changed:
+        description: "Whether documentation was changed"
+        value: ${{ jobs.docs.outputs.changed }}
+
+jobs:
+  docs:
+    name: Generate Terraform Docs
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.terraform-docs.outputs.num_changed > 0 }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+          persist-credentials: true
+
+      - name: Render Terraform Docs
+        id: terraform-docs
+        uses: terraform-docs/gh-actions@6de6da0cefcc6b4b7a5cbea4d79d97060733093c # v1.4.1
+        with:
+          working-dir: ${{ inputs.working-dir }}
+          output-file: ${{ inputs.output-file }}
+          output-method: ${{ inputs.output-method }}
+          git-push: ${{ !inputs.dry-run }}
+          git-commit-message: "docs(terraform): update ${{ inputs.output-file }}"
+
+      - name: Upload Docs Artifact
+        if: steps.terraform-docs.outputs.num_changed > 0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: |
+            ${{ inputs.output-file }}
+          retention-days: 1
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Documentation Summary (Terraform)"
+            echo ""
+            echo "| Item | Value |"
+            echo "|------|-------|"
+            echo "| Working Dir | \`${INPUTS_WORKING_DIR}\` |"
+            echo "| Output File | \`${INPUTS_OUTPUT_FILE}\` |"
+            echo "| Changed | ${{ steps.terraform-docs.outputs.num_changed > 0 }} |"
+            echo "| Files Changed | ${STEPS_TERRAFORM_DOCS_OUTPUTS_NUM_CHANGED} |"
+            echo "| Dry Run | ${{ inputs.dry-run }} |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          INPUTS_WORKING_DIR: ${{ inputs.working-dir }}
+          INPUTS_OUTPUT_FILE: ${{ inputs.output-file }}
+          STEPS_TERRAFORM_DOCS_OUTPUTS_NUM_CHANGED: ${{ steps.terraform-docs.outputs.num_changed }}

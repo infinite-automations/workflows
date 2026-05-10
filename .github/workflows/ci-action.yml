@@ -1,0 +1,98 @@
+---
+# Caller permissions (validated statically by GitHub, regardless of dry-run):
+#   required: { contents: write, issues: write, packages: read, pull-requests: write, statuses: write }
+name: CI (Action)
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode (lint runs normally, release is dry-run)"
+        required: false
+        type: boolean
+        default: false
+      skip-lint:
+        description: "Skip the lint job (useful when lint is run separately)"
+        required: false
+        type: boolean
+        default: false
+      source-file:
+        description: "Path to the action.yml file for docs generation"
+        required: false
+        type: string
+        default: "action.yml"
+      readme-file:
+        description: "Path to the README file to update"
+        required: false
+        type: string
+        default: "README.md"
+      # jscpd:ignore-start
+      semrel-extra-plugins:
+        description: "Newline-separated list of extra semantic-release plugins"
+        required: false
+        type: string
+    secrets:
+      APP_ID:
+        description: "GitHub App ID for release authentication (optional)"
+        required: false
+      APP_PRIVATE_KEY:
+        description: "GitHub App private key for release authentication (optional)"
+        required: false
+    outputs:
+      lint-status:
+        description: "Lint result status"
+        value: ${{ jobs.lint.outputs.status }}
+      docs-changed:
+        description: "Whether documentation was changed"
+        value: ${{ jobs.docs.outputs.changed }}
+      version:
+        description: "Released version"
+        value: ${{ jobs.release.outputs.version }}
+      published:
+        description: "Whether a new version was published"
+        value: ${{ jobs.release.outputs.published }}
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Lint
+    if: ${{ !inputs.skip-lint }}
+    uses: ./.github/workflows/lint.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+    permissions:
+      contents: read
+      packages: read
+      statuses: write
+    # jscpd:ignore-end
+
+  docs:
+    name: Documentation
+    needs: [lint]
+    if: ${{ !cancelled() && (inputs.skip-lint || needs.lint.result == 'success') }}
+    uses: ./.github/workflows/docs-action.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      source-file: ${{ inputs.source-file }}
+      readme-file: ${{ inputs.readme-file }}
+    permissions:
+      contents: write
+
+  # jscpd:ignore-start
+  release:
+    name: Release
+    needs: [lint, docs]
+    if: ${{ !cancelled() && (inputs.skip-lint || needs.lint.result == 'success') && needs.docs.result == 'success' }}
+    uses: ./.github/workflows/release.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      extra-plugins: ${{ inputs.semrel-extra-plugins }}
+    secrets:
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+  # jscpd:ignore-end

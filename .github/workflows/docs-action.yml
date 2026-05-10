@@ -1,0 +1,175 @@
+---
+# checkov:skip=CKV2_GHA_1:Permissions are set by the caller of this reusable workflow
+# Caller permissions:
+#   min: { contents: read }
+#   max: { contents: read }
+name: Documentation (Action/Workflow)
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode (generate docs but do not commit)"
+        required: false
+        type: boolean
+        default: false
+      source-file:
+        description: "Path to a single action.yml or workflow file (mutually exclusive with source-dir)"
+        required: false
+        type: string
+      readme-file:
+        description: "Path to the README file to update (used with source-file)"
+        required: false
+        type: string
+        default: "README.md"
+      source-dir:
+        description: "Directory of workflow/action files to generate docs for (mutually exclusive with source-file)"
+        required: false
+        type: string
+      docs-dir:
+        description: "Output directory for generated docs (used with source-dir)"
+        required: false
+        type: string
+      source-glob:
+        description: "Glob pattern to match files in source-dir (used with source-dir)"
+        required: false
+        type: string
+        default: "*.yml"
+      toc-level:
+        description: "TOC heading level for generated docs"
+        required: false
+        type: number
+        default: 2
+      artifact-name:
+        description: "Name of the artifact to upload with generated docs"
+        required: false
+        type: string
+        default: "docs"
+      # renovate: datasource=npm depName=action-docs
+      action-docs-version:
+        description: "action-docs version to install"
+        required: false
+        type: string
+        default: "2.5.1"
+      node-version:
+        description: "Node.js version to use"
+        required: false
+        type: string
+        default: "lts/*"
+    outputs:
+      changed:
+        description: "Whether documentation was changed"
+        value: ${{ jobs.docs.outputs.changed }}
+
+jobs:
+  docs:
+    name: Generate Docs
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.changes.outputs.changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Install action-docs
+        shell: bash
+        env:
+          INPUTS_ACTION_DOCS_VERSION: ${{ inputs.action-docs-version }}
+        run: |
+          npm install -g "action-docs@${INPUTS_ACTION_DOCS_VERSION}"
+
+      - name: Generate Documentation (Single File)
+        if: inputs.source-file != '' && inputs.source-dir == ''
+        shell: bash
+        run: |
+          action-docs \
+            --source "${INPUTS_SOURCE_FILE}" \
+            --toc-level "${{ inputs.toc-level }}" \
+            --update-readme "${INPUTS_README_FILE}"
+        env:
+          INPUTS_SOURCE_FILE: ${{ inputs.source-file }}
+          INPUTS_README_FILE: ${{ inputs.readme-file }}
+
+      - name: Generate Documentation (Directory)
+        if: inputs.source-dir != '' && inputs.docs-dir != ''
+        shell: bash
+        env:
+          SOURCE_DIR: ${{ inputs.source-dir }}
+          DOCS_DIR: ${{ inputs.docs-dir }}
+          SOURCE_GLOB: ${{ inputs.source-glob }}
+          TOC_LEVEL: ${{ inputs.toc-level }}
+        run: |
+          mkdir -p "${DOCS_DIR}"
+          count=0
+          for source in ${SOURCE_DIR}/${SOURCE_GLOB}; do
+            [[ -f "${source}" ]] || continue
+            name="$(basename "${source}" .yml)"
+            name="$(basename "${name}" .yaml)"
+            target="${DOCS_DIR}/${name}.md"
+            echo "Generating: ${source} -> ${target}"
+            action-docs \
+              --source "${source}" \
+              --toc-level "${TOC_LEVEL}" \
+              --no-banner \
+              --include-name-header \
+              > "${target}"
+            count=$((count + 1))
+          done
+          echo "Generated ${count} doc(s)"
+
+      - name: Check For Changes
+        id: changes
+        shell: bash
+        env:
+          CHECK_PATH: ${{ inputs.source-dir != '' && inputs.docs-dir || inputs.readme-file }}
+        run: |
+          if git diff --quiet -- "${CHECK_PATH}"; then
+            echo "changed=false" >> "${GITHUB_OUTPUT}"
+            echo "No documentation changes detected"
+          else
+            echo "changed=true" >> "${GITHUB_OUTPUT}"
+            echo "Documentation changes detected"
+          fi
+
+      - name: Upload Docs Artifact
+        if: steps.changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.source-dir != '' && inputs.docs-dir || inputs.readme-file }}
+          retention-days: 1
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Documentation Summary (Action/Workflow)"
+            echo ""
+            echo "| Item | Value |"
+            echo "|------|-------|"
+            if [[ -n "${INPUTS_SOURCE_DIR}" ]]; then
+              echo "| Source Dir | \`${INPUTS_SOURCE_DIR}\` |"
+              echo "| Docs Dir | \`${INPUTS_DOCS_DIR}\` |"
+              echo "| Glob | \`${INPUTS_SOURCE_GLOB}\` |"
+            else
+              echo "| Source | \`${INPUTS_SOURCE_FILE}\` |"
+              echo "| README | \`${INPUTS_README_FILE}\` |"
+            fi
+            echo "| Changed | ${STEPS_CHANGES_OUTPUTS_CHANGED} |"
+            echo "| Dry Run | ${{ inputs.dry-run }} |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          INPUTS_SOURCE_DIR: ${{ inputs.source-dir }}
+          INPUTS_DOCS_DIR: ${{ inputs.docs-dir }}
+          INPUTS_SOURCE_GLOB: ${{ inputs.source-glob }}
+          INPUTS_SOURCE_FILE: ${{ inputs.source-file }}
+          INPUTS_README_FILE: ${{ inputs.readme-file }}
+          STEPS_CHANGES_OUTPUTS_CHANGED: ${{ steps.changes.outputs.changed }}

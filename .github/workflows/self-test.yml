@@ -1,0 +1,84 @@
+---
+# checkov:skip=CKV2_GHA_1:Permissions are scoped per-job with least privilege
+name: Test
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode"
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  test-docs-mkdocs:
+    name: Test docs-mkdocs
+    uses: ./.github/workflows/docs-mkdocs.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      pip-plugins: mkdocs-awesome-pages-plugin
+      artifact-name: test-docs-mkdocs
+    permissions:
+      contents: read
+
+  test-docs-action:
+    name: Test docs-action
+    uses: ./.github/workflows/docs-action.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      artifact-name: test-docs-action
+    permissions:
+      contents: read
+
+  test-release:
+    name: Test release
+    uses: ./.github/workflows/release.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      extra-plugins: |
+        conventional-changelog-conventionalcommits
+        semantic-release-replace-plugin
+    permissions:
+      contents: read
+
+  test-ci-terraform-module:
+    name: Test ci-terraform-module
+    uses: ./.github/workflows/ci-terraform-module.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      skip-lint: true
+      semrel-extra-plugins: |
+        conventional-changelog-conventionalcommits
+        semantic-release-replace-plugin
+    permissions:
+      contents: write
+      issues: write
+      packages: read
+      pull-requests: write
+      statuses: write
+
+  test-ci-action:
+    name: Test ci-action
+    uses: ./.github/workflows/ci-action.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      skip-lint: true
+      semrel-extra-plugins: |
+        conventional-changelog-conventionalcommits
+        semantic-release-replace-plugin
+    permissions:
+      contents: write
+      issues: write
+      packages: read
+      pull-requests: write
+      statuses: write
+
+  test-docs-terraform:
+    name: Test docs-terraform
+    uses: ./.github/workflows/docs-terraform.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      artifact-name: test-docs-terraform
+    permissions:
+      contents: read
