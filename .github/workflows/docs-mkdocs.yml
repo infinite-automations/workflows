@@ -1,0 +1,253 @@
+---
+# checkov:skip=CKV2_GHA_1:Permissions are set by the caller of this reusable workflow
+# Caller permissions:
+#   min (dry-run):  { contents: read }
+#   max (deploy):   { contents: write, pull-requests: write }
+name: Documentation (MkDocs)
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode (build but do not deploy)"
+        required: false
+        type: boolean
+        default: false
+      docs-dir:
+        description: "Directory containing mkdocs.yml"
+        required: false
+        type: string
+        default: "docs"
+      python-version:
+        description: "Python version to use for MkDocs"
+        required: false
+        type: string
+        default: "3.x"
+      deploy-branch:
+        description: "Branch to deploy to via mkdocs gh-deploy (empty = skip deploy)"
+        required: false
+        type: string
+      deploy-prefix:
+        description: "Subdirectory on deploy-branch for preview deploys (empty = deploy to root)"
+        required: false
+        type: string
+      deploy-version:
+        description: "Version label for mike versioned deploy (empty = unversioned deploy)"
+        required: false
+        type: string
+      set-latest:
+        description: "Set this version as latest (for root index). Only true for release deploys."
+        required: false
+        type: boolean
+        default: false
+      # renovate: datasource=pypi depName=mike
+      mike-version:
+        description: "mike version to install for versioned deploys (empty = skip install)"
+        required: false
+        type: string
+        default: "2.1.3"
+      # renovate: datasource=pypi depName=mkdocs
+      mkdocs-version:
+        description: "MkDocs version to install (empty = skip install)"
+        required: false
+        type: string
+        default: "1.6.1"
+      # renovate: datasource=pypi depName=mkdocs-material
+      mkdocs-material-version:
+        description: "MkDocs Material version to install (empty = skip install)"
+        required: false
+        type: string
+        default: "9.7.6"
+      pip-plugins:
+        description: "Space-separated list of additional pip packages to install (MkDocs plugins)"
+        required: false
+        type: string
+      artifact-name:
+        description: "Name of the artifact to upload with built site"
+        required: false
+        type: string
+        default: "docs-site"
+    outputs:
+      artifact-name:
+        description: "Name of the uploaded artifact"
+        value: ${{ inputs.artifact-name }}
+      preview-url:
+        description: "URL of the deployed preview site (only set for prefix deploys)"
+        value: ${{ jobs.docs.outputs.preview-url }}
+
+jobs:
+  docs:
+    name: Build & Deploy MkDocs
+    runs-on: ubuntu-latest
+    outputs:
+      preview-url: ${{ steps.preview-url.outputs.url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Download Docs Artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          merge-multiple: true
+        continue-on-error: true
+
+      - name: Setup Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ inputs.python-version }}
+
+      - name: Install MkDocs
+        shell: bash
+        env:
+          MKDOCS_VERSION: ${{ inputs.mkdocs-version }}
+          MATERIAL_VERSION: ${{ inputs.mkdocs-material-version }}
+          PIP_PLUGINS: ${{ inputs.pip-plugins }}
+          MIKE_VERSION: ${{ inputs.deploy-version != '' && inputs.mike-version || '' }}
+        run: |
+          packages=""
+          [[ -n "${MKDOCS_VERSION}" ]] && packages="mkdocs==${MKDOCS_VERSION}"
+          [[ -n "${MATERIAL_VERSION}" ]] && packages="${packages} mkdocs-material==${MATERIAL_VERSION}"
+          [[ -n "${MIKE_VERSION}" ]] && packages="${packages} mike==${MIKE_VERSION}"
+          [[ -n "${PIP_PLUGINS}" ]] && packages="${packages} ${PIP_PLUGINS}"
+          if [[ -n "${packages}" ]]; then
+            # shellcheck disable=SC2086
+            pip install ${packages}
+          fi
+
+      - name: Build Site
+        shell: bash
+        working-directory: ${{ inputs.docs-dir }}
+        env:
+          NO_MKDOCS_2_WARNING: "1"
+        run: mkdocs build --strict
+
+      - name: Upload Site Artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: ${{ inputs.docs-dir }}/site
+          retention-days: 1
+
+      - name: Deploy Versioned Docs with mike
+        if: inputs.deploy-branch != '' && inputs.deploy-prefix == '' && inputs.deploy-version != '' && !inputs.dry-run
+        shell: bash
+        working-directory: ${{ inputs.docs-dir }}
+        env:
+          INPUTS_DEPLOY_BRANCH: ${{ inputs.deploy-branch }}
+          DEPLOY_VERSION: ${{ inputs.deploy-version }}
+          SET_LATEST: ${{ inputs.set-latest }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin "${INPUTS_DEPLOY_BRANCH}":"${INPUTS_DEPLOY_BRANCH}" 2>/dev/null || true
+          if [[ "${SET_LATEST}" == "true" ]]; then
+            mike deploy --branch "${INPUTS_DEPLOY_BRANCH}" --update-aliases "${DEPLOY_VERSION}" latest
+            mike set-default --branch "${INPUTS_DEPLOY_BRANCH}" latest
+          else
+            mike deploy --branch "${INPUTS_DEPLOY_BRANCH}" --update-aliases "${DEPLOY_VERSION}"
+          fi
+
+      - name: Deploy Preview to GitHub Pages
+        if: inputs.deploy-branch != '' && inputs.deploy-prefix != '' && !inputs.dry-run
+        shell: bash
+        env:
+          DEPLOY_BRANCH: ${{ inputs.deploy-branch }}
+          DEPLOY_PREFIX: ${{ inputs.deploy-prefix }}
+          SITE_DIR: ${{ inputs.docs-dir }}/site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin "${DEPLOY_BRANCH}":"${DEPLOY_BRANCH}" 2>/dev/null || true
+          if git show-ref --verify --quiet "refs/heads/${DEPLOY_BRANCH}"; then
+            git worktree add /tmp/gh-pages "${DEPLOY_BRANCH}"
+          else
+            git worktree add --detach /tmp/gh-pages
+            cd /tmp/gh-pages
+            git checkout --orphan "${DEPLOY_BRANCH}"
+            git rm -rf . 2>/dev/null || true
+          fi
+          cd /tmp/gh-pages
+          rm -rf "${DEPLOY_PREFIX}"
+          mkdir -p "${DEPLOY_PREFIX}"
+          cp -r "${GITHUB_WORKSPACE}/${SITE_DIR}/." "${DEPLOY_PREFIX}/"
+          git add -A
+          git diff --cached --quiet || {
+            git commit -m "docs: deploy preview to ${DEPLOY_PREFIX}"
+            git push origin HEAD:"${DEPLOY_BRANCH}"
+          }
+          cd "${GITHUB_WORKSPACE}"
+          git worktree remove /tmp/gh-pages --force
+
+      - name: Compute Preview URL
+        id: preview-url
+        if: inputs.deploy-branch != '' && inputs.deploy-prefix != '' && !inputs.dry-run
+        shell: bash
+        env:
+          REPO: ${{ github.repository }}
+          DEPLOY_PREFIX: ${{ inputs.deploy-prefix }}
+        run: |
+          REPO_NAME="${REPO#*/}"
+          OWNER="${REPO%/*}"
+          URL="https://${OWNER}.github.io/${REPO_NAME}/${DEPLOY_PREFIX}/"
+          echo "url=${URL}" >> "${GITHUB_OUTPUT}"
+
+      - name: Comment Preview URL
+        if: steps.preview-url.outputs.url != '' && github.event_name == 'pull_request'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+          PREVIEW_URL: ${{ steps.preview-url.outputs.url }}
+        run: |
+          BODY=":book: **Docs Preview**: ${PREVIEW_URL}"
+          EXISTING=$(gh api "repos/${REPO}/issues/${PR_NUMBER}/comments" \
+            --jq '.[] | select(.body | startswith(":book: **Docs Preview**")) | .id' \
+            2>/dev/null | head -1)
+          if [[ -n "${EXISTING}" ]]; then
+            gh api "repos/${REPO}/issues/comments/${EXISTING}" \
+              -X PATCH -f body="${BODY}"
+          else
+            gh pr comment "${PR_NUMBER}" --repo "${REPO}" --body "${BODY}"
+          fi
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## MkDocs Summary"
+            echo ""
+            echo "| Item | Value |"
+            echo "|------|-------|"
+            echo "| Docs Dir | \`${INPUTS_DOCS_DIR}\` |"
+            echo "| Dry Run | ${{ inputs.dry-run }} |"
+            echo "| Artifact | \`${INPUTS_ARTIFACT_NAME}\` |"
+            if [[ -n "${INPUTS_DEPLOY_BRANCH}" ]]; then
+              if [[ "${{ inputs.dry-run }}" == "true" ]]; then
+                echo "| Deploy | Skipped (dry-run) |"
+              elif [[ -n "${INPUTS_DEPLOY_PREFIX}" ]]; then
+                echo "| Deploy | \`${INPUTS_DEPLOY_BRANCH}\` / \`${INPUTS_DEPLOY_PREFIX}\` |"
+              if [[ -n "${STEPS_PREVIEW_URL_OUTPUTS_URL}" ]]; then
+                echo "| Preview | ${STEPS_PREVIEW_URL_OUTPUTS_URL} |"
+              fi
+              else
+                echo "| Deploy | \`${INPUTS_DEPLOY_BRANCH}\` branch |"
+              if [[ -n "${INPUTS_DEPLOY_VERSION}" ]]; then
+                echo "| Version | \`${INPUTS_DEPLOY_VERSION}\` (latest) |"
+              fi
+              fi
+            else
+              echo "| Deploy | Disabled (no deploy-branch set) |"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          INPUTS_DOCS_DIR: ${{ inputs.docs-dir }}
+          INPUTS_ARTIFACT_NAME: ${{ inputs.artifact-name }}
+          INPUTS_DEPLOY_BRANCH: ${{ inputs.deploy-branch }}
+          INPUTS_DEPLOY_PREFIX: ${{ inputs.deploy-prefix }}
+          INPUTS_DEPLOY_VERSION: ${{ inputs.deploy-version }}
+          STEPS_PREVIEW_URL_OUTPUTS_URL: ${{ steps.preview-url.outputs.url }}

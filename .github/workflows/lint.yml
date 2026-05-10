@@ -1,0 +1,115 @@
+---
+# checkov:skip=CKV2_GHA_1:Permissions are set by the caller of this reusable workflow
+# Caller permissions:
+#   min: { contents: read }
+#   max: { contents: read, packages: read, statuses: write }
+name: Lint
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode (no effect for linting, always runs)"
+        required: false
+        type: boolean
+        default: false
+      config-file:
+        description: "Path to the Super-Linter env configuration file"
+        required: false
+        type: string
+        default: ".github/linters/.super-linter.env"
+      validate-all-codebase:
+        description: "Validate all files (true) or only changed files (false)"
+        required: false
+        type: boolean
+        default: true
+      extra-env-vars:
+        description: "Newline-separated KEY=VALUE pairs to pass as additional env vars to Super-Linter"
+        required: false
+        type: string
+
+    outputs:
+      status:
+        description: "Lint result status (success or failure)"
+        value: ${{ jobs.lint.outputs.status }}
+
+jobs:
+  lint:
+    name: Super-Linter
+    runs-on: ubuntu-latest
+    outputs:
+      status: ${{ steps.result.outputs.status }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Load Linter Configuration
+        id: config
+        shell: bash
+        env:
+          CONFIG_FILE: ${{ inputs.config-file }}
+          EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
+        run: |
+          if [[ -f "${CONFIG_FILE}" ]]; then
+            echo "Loading linter configuration from ${CONFIG_FILE}"
+            while IFS= read -r line || [[ -n "${line}" ]]; do
+              if [[ "${line}" =~ ^[[:space:]]*# ]] || [[ -z "${line}" ]]; then
+                continue
+              fi
+              echo "${line}" >> "${GITHUB_ENV}"
+            done < "${CONFIG_FILE}"
+          else
+            echo "No custom linter configuration found, using defaults"
+          fi
+          if [[ -n "${EXTRA_ENV_VARS}" ]]; then
+            echo "Loading extra environment variables"
+            while IFS= read -r line || [[ -n "${line}" ]]; do
+              if [[ "${line}" =~ ^[[:space:]]*# ]] || [[ -z "${line}" ]]; then
+                continue
+              fi
+              echo "${line}" >> "${GITHUB_ENV}"
+            done <<< "${EXTRA_ENV_VARS}"
+          fi
+
+      - name: Super-Linter
+        id: super-linter
+        uses: super-linter/super-linter@9e863354e3ff62e0727d37183162c4a88873df41 # v8.6.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: ${{ inputs.validate-all-codebase }}
+
+      - name: Set Result
+        id: result
+        if: always()
+        shell: bash
+        run: |
+          if [[ "${STEPS_SUPER_LINTER_OUTCOME}" == "success" ]]; then
+            echo "status=success" >> "${GITHUB_OUTPUT}"
+          else
+            echo "status=failure" >> "${GITHUB_OUTPUT}"
+          fi
+        env:
+          STEPS_SUPER_LINTER_OUTCOME: ${{ steps.super-linter.outcome }}
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Lint Summary"
+            echo ""
+            echo "| Item | Value |"
+            echo "|------|-------|"
+            if [[ "${STEPS_SUPER_LINTER_OUTCOME}" == "success" ]]; then
+              echo "| Status | :white_check_mark: Passed |"
+            else
+              echo "| Status | :x: Failed |"
+            fi
+            echo "| Dry Run | ${{ inputs.dry-run }} |"
+            echo "| Linter | [Super-Linter](https://github.com/super-linter/super-linter) v8.6.0 |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          STEPS_SUPER_LINTER_OUTCOME: ${{ steps.super-linter.outcome }}

@@ -1,0 +1,104 @@
+---
+name: Release
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Lint
+    uses: ./.github/workflows/lint.yml
+    permissions:
+      contents: read
+      packages: read
+      statuses: write
+    concurrency:
+      group: ${{ github.workflow }}-lint-${{ github.ref }}
+      cancel-in-progress: true
+
+  test:
+    name: Test
+    needs: [lint]
+    uses: ./.github/workflows/self-test.yml
+    permissions:
+      contents: write
+      issues: write
+      packages: read
+      pull-requests: write
+      statuses: write
+    concurrency:
+      group: ${{ github.workflow }}-test-${{ github.ref }}
+      cancel-in-progress: true
+
+  docs:
+    name: Workflow Docs
+    needs: [lint]
+    uses: ./.github/workflows/docs-action.yml
+    with:
+      source-dir: .github/workflows
+      docs-dir: docs/docs/workflows
+      artifact-name: workflow-docs
+    permissions:
+      contents: read
+    concurrency:
+      group: ${{ github.workflow }}-docs-${{ github.ref }}
+      cancel-in-progress: true
+
+  docs-site:
+    name: Build Docs Site
+    needs: [lint, docs]
+    uses: ./.github/workflows/docs-mkdocs.yml
+    with:
+      pip-plugins: mkdocs-awesome-pages-plugin
+      artifact-name: docs-site
+      deploy-branch: ${{ github.event_name == 'pull_request' && 'gh-pages' || '' }}
+      deploy-prefix: ${{ github.event_name == 'pull_request' && format('pr/{0}', github.event.pull_request.number) || '' }}
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: ${{ github.workflow }}-docs-site-${{ github.ref }}
+      cancel-in-progress: false
+
+  release:
+    name: Release
+    needs: [lint, test, docs-site]
+    uses: ./.github/workflows/release.yml
+    with:
+      dry-run: ${{ github.event_name == 'pull_request' }}
+      extra-plugins: |
+        conventional-changelog-conventionalcommits
+        semantic-release-replace-plugin
+    secrets:
+      APP_ID: ${{ secrets.APP_ID_SEMREL }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_KEY_SEMREL }}
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    concurrency:
+      group: ${{ github.workflow }}-release-${{ github.ref }}
+      cancel-in-progress: false
+
+  docs-deploy:
+    name: Deploy Docs
+    needs: [release]
+    if: needs.release.outputs.published == 'true'
+    uses: ./.github/workflows/docs-mkdocs.yml
+    with:
+      deploy-branch: gh-pages
+      deploy-version: ${{ needs.release.outputs.version }}
+      set-latest: true
+      pip-plugins: mkdocs-awesome-pages-plugin
+      artifact-name: docs-site
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: ${{ github.workflow }}-docs-deploy-${{ github.ref }}
+      cancel-in-progress: false
