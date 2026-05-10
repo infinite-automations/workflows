@@ -1,0 +1,87 @@
+---
+# checkov:skip=CKV2_GHA_1:Permissions are set by the caller of this reusable workflow
+# Caller permissions:
+#   min: { contents: read }
+#   max: { contents: read, packages: read, statuses: write }
+name: Lint
+
+on:
+  workflow_call:
+    inputs:
+      config-file:
+        description: "Path to the Super-Linter env configuration file"
+        required: false
+        type: string
+        default: ".github/linters/.super-linter.env"
+      validate-all-codebase:
+        description: "Validate all files (true) or only changed files (false)"
+        required: false
+        type: boolean
+        default: true
+      extra-env-vars:
+        description: "Newline-separated KEY=VALUE pairs to pass as additional env vars to Super-Linter"
+        required: false
+        type: string
+    secrets:
+      APP_ID:
+        description: "GitHub App ID for enhanced token (enables zizmor online audits)"
+        required: false
+      APP_PRIVATE_KEY:
+        description: "GitHub App private key for enhanced token"
+        required: false
+
+jobs:
+  lint: # zizmor: ignore[secrets-outside-env]
+    name: Super-Linter
+    runs-on: ubuntu-latest
+    env:
+      HAS_APP_CREDENTIALS: ${{ secrets.APP_ID != '' && secrets.APP_PRIVATE_KEY != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Load Linter Configuration
+        id: config
+        shell: bash
+        env:
+          CONFIG_FILE: ${{ inputs.config-file }}
+          EXTRA_ENV_VARS: ${{ inputs.extra-env-vars }}
+        run: |
+          if [[ -f "${CONFIG_FILE}" ]]; then
+            echo "Loading linter configuration from ${CONFIG_FILE}"
+            while IFS= read -r line || [[ -n "${line}" ]]; do
+              if [[ "${line}" =~ ^[[:space:]]*# ]] || [[ -z "${line}" ]]; then
+                continue
+              fi
+              echo "${line}" >> "${GITHUB_ENV}"
+            done < "${CONFIG_FILE}"
+          else
+            echo "No custom linter configuration found, using defaults"
+          fi
+          if [[ -n "${EXTRA_ENV_VARS}" ]]; then
+            echo "Loading extra environment variables"
+            while IFS= read -r line || [[ -n "${line}" ]]; do
+              if [[ "${line}" =~ ^[[:space:]]*# ]] || [[ -z "${line}" ]]; then
+                continue
+              fi
+              echo "${line}" >> "${GITHUB_ENV}"
+            done <<< "${EXTRA_ENV_VARS}"
+          fi
+
+      - name: Get GitHub App Token
+        id: app-token
+        if: env.HAS_APP_CREDENTIALS == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Super-Linter
+        id: super-linter
+        uses: super-linter/super-linter@9e863354e3ff62e0727d37183162c4a88873df41 # v8.6.0
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: ${{ inputs.validate-all-codebase }}

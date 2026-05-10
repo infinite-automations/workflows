@@ -1,0 +1,193 @@
+---
+# checkov:skip=CKV2_GHA_1:Permissions are set by the caller of this reusable workflow
+# Caller permissions:
+#   min: { contents: read, packages: write }
+#   max: { contents: read, packages: write }
+name: Docker Build & Push
+
+on:
+  workflow_call:
+    inputs:
+      image:
+        description: "Full image name (e.g. ghcr.io/owner/repo)"
+        required: false
+        type: string
+        default: "ghcr.io/${{ github.repository }}"
+      context:
+        description: "Docker build context path"
+        required: false
+        type: string
+        default: "."
+      file:
+        description: "Path to the Dockerfile (relative to context)"
+        required: false
+        type: string
+      tags:
+        description: "Newline-separated extra tags to apply (in addition to auto-generated tags)"
+        required: false
+        type: string
+      tag-semver:
+        description: "Apply semver tag pattern (e.g. {{version}})"
+        required: false
+        type: string
+        default: "{{version}}"
+      registry:
+        description: "Container registry to authenticate with"
+        required: false
+        type: string
+        default: "ghcr.io"
+      build-args:
+        description: "Newline-separated list of build arguments"
+        required: false
+        type: string
+      platforms:
+        description: "Comma-separated list of target platforms (e.g. linux/amd64,linux/arm64)"
+        required: false
+        type: string
+      cache-from:
+        description: "Cache source for Docker build"
+        required: false
+        type: string
+        default: "type=gha"
+      cache-to:
+        description: "Cache destination for Docker build"
+        required: false
+        type: string
+        default: "type=gha,mode=max"
+      target:
+        description: "Docker build target stage"
+        required: false
+        type: string
+      download-artifact-name:
+        description: "Name of a build artifact to download before building (empty to skip)"
+        required: false
+        type: string
+      download-all-artifacts:
+        description: "Download all artifacts before building"
+        required: false
+        type: boolean
+        default: false
+      download-artifact-path:
+        description: "Path to download the artifact to (relative to workspace)"
+        required: false
+        type: string
+      download-artifact-merge-multiple:
+        description: "Merge multiple artifacts into a single directory"
+        required: false
+        type: boolean
+        default: true
+      download-artifact-continue-on-error:
+        description: "Continue workflow if artifact download fails"
+        required: false
+        type: boolean
+        default: false
+      push:
+        description: "Push image to registry after building"
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      REGISTRY_USERNAME:
+        description: "Registry username (optional, defaults to github.repository_owner)"
+        required: false
+      REGISTRY_PASSWORD:
+        description: "Registry password (optional, defaults to GITHUB_TOKEN)"
+        required: false
+    outputs:
+      image:
+        description: "Full image reference with digest"
+        value: ${{ jobs.docker.outputs.image }}
+      digest:
+        description: "Image digest"
+        value: ${{ jobs.docker.outputs.digest }}
+      tags:
+        description: "Applied image tags (newline-separated)"
+        value: ${{ jobs.docker.outputs.tags }}
+
+jobs:
+  docker: # zizmor: ignore[secrets-outside-env]
+    name: Build & Push
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ inputs.image }}@${{ steps.build.outputs.digest }}
+      digest: ${{ steps.build.outputs.digest }}
+      tags: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Download Artifact
+        if: ${{ inputs.download-artifact-name != '' || inputs.download-all-artifacts }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.download-artifact-name }}
+          path: ${{ inputs.download-artifact-path }}
+          merge-multiple: ${{ inputs.download-artifact-merge-multiple }}
+        continue-on-error: ${{ inputs.download-artifact-continue-on-error }}
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
+        with:
+          images: ${{ inputs.image }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern=${{ inputs.tag-semver }}
+            ${{ inputs.tags }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+
+      - name: Login to Registry
+        uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
+        with:
+          registry: ${{ inputs.registry }}
+          username: ${{ secrets.REGISTRY_USERNAME || github.repository_owner }}
+          password: ${{ secrets.REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        id: build
+        # zizmor: ignore[template-injection] -- inputs from workflow_call are not attacker-controllable
+        uses: docker/build-push-action@f9f3042f7e2789586610d6e8b85c8f03e5195baf # v7.2.0
+        with:
+          context: ${{ inputs.context }}
+          file: ${{ inputs.file }}
+          target: ${{ inputs.target }}
+          push: ${{ inputs.push }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: ${{ inputs.build-args }}
+          platforms: ${{ inputs.platforms }}
+          cache-from: ${{ inputs.cache-from }}
+          cache-to: ${{ inputs.cache-to }}
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Docker Build Summary"
+            echo ""
+            echo "| Item | Value |"
+            echo "|------|-------|"
+            echo "| Image | \`${INPUTS_IMAGE}\` |"
+            echo "| Context | \`${INPUTS_CONTEXT}\` |"
+            echo "| Push | ${INPUTS_PUSH} |"
+            if [[ -n "${STEPS_BUILD_OUTPUTS_DIGEST}" ]]; then
+              echo "| Digest | \`${STEPS_BUILD_OUTPUTS_DIGEST}\` |"
+            fi
+            if [[ "${INPUTS_PUSH}" != "true" ]]; then
+              echo "| Pushed | :no_entry_sign: Disabled |"
+            else
+              echo "| Pushed | :white_check_mark: Yes |"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          STEPS_BUILD_OUTPUTS_DIGEST: ${{ steps.build.outputs.digest }}
+          INPUTS_IMAGE: ${{ inputs.image }}
+          INPUTS_PUSH: ${{ inputs.push }}
+          INPUTS_CONTEXT: ${{ inputs.context }}

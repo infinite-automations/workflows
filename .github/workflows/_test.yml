@@ -1,0 +1,178 @@
+---
+# checkov:skip=CKV2_GHA_1:Permissions are scoped per-job with least privilege
+name: Test
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode"
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  test-docs-mkdocs:
+    name: Test docs-mkdocs
+    uses: ./.github/workflows/docs-mkdocs.yml
+    with:
+      pip-plugins: mkdocs-awesome-pages-plugin
+      upload-artifact-name: test-docs-mkdocs
+    permissions:
+      contents: read
+
+  test-docs-action:
+    name: Test docs-action
+    uses: ./.github/workflows/docs-action.yml
+    with:
+      upload-artifact-name: test-docs-action
+    permissions:
+      contents: read
+
+  test-release:
+    name: Test release
+    uses: ./.github/workflows/release.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      extra-plugins: |
+        conventional-changelog-conventionalcommits
+        semantic-release-replace-plugin
+        semantic-release-major-tag
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+  test-ci-terraform-module:
+    name: Test ci-terraform-module
+    uses: ./.github/workflows/ci-terraform-module.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      skip-lint: true
+      docs-artifact-name: test-docs-ci-terraform
+      semrel-extra-plugins: |
+        conventional-changelog-conventionalcommits
+        semantic-release-replace-plugin
+        semantic-release-major-tag
+    permissions:
+      contents: write
+      issues: write
+      packages: read
+      pull-requests: write
+      statuses: write
+
+  test-ci-action:
+    name: Test ci-action
+    uses: ./.github/workflows/ci-action.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      skip-lint: true
+      docs-artifact-name: test-docs-ci-action
+      semrel-extra-plugins: |
+        conventional-changelog-conventionalcommits
+        semantic-release-replace-plugin
+        semantic-release-major-tag
+    permissions:
+      contents: write
+      issues: write
+      packages: read
+      pull-requests: write
+      statuses: write
+
+  test-docs-terraform:
+    name: Test docs-terraform
+    uses: ./.github/workflows/docs-terraform.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      upload-artifact-name: test-docs-terraform
+    permissions:
+      contents: read
+
+  test-build-dotnet:
+    name: Test build-dotnet
+    uses: ./.github/workflows/build-dotnet.yml
+    with:
+      working-directory: test/dotnet
+      upload-artifact-name: test-build-dotnet
+    permissions:
+      actions: read
+      checks: write
+      contents: read
+
+  test-docker:
+    name: Test docker
+    uses: ./.github/workflows/docker.yml
+    with:
+      context: test/docker
+      image: ghcr.io/${{ github.repository }}/test
+    permissions:
+      contents: read
+      packages: write
+
+  test-deploy-helm:
+    name: Test deploy-helm
+    uses: ./.github/workflows/deploy-helm.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      release-name: test-release
+      chart: oci://ghcr.io/stakater/charts/application
+      namespace: test
+      set-values: |
+        applicationName=test
+        deployment.image.repository=nginx
+        deployment.image.tag=latest
+    permissions:
+      contents: read
+
+  test-ci-dotnet:
+    name: Test ci-dotnet
+    uses: ./.github/workflows/ci-dotnet.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      skip-lint: true
+      working-directory: test/dotnet
+      docker-context: test/docker
+      artifact-name: test-ci-dotnet-build
+      docker-image: ghcr.io/${{ github.repository }}/test-dotnet
+      semrel-extra-plugins: |
+        conventional-changelog-conventionalcommits
+        semantic-release-replace-plugin
+        semantic-release-major-tag
+    permissions:
+      actions: read
+      checks: write
+      contents: write
+      issues: write
+      packages: write
+      pull-requests: write
+      statuses: write
+
+  test-cd-docker-helm:
+    name: Test cd-docker-helm
+    needs: [test-docker]
+    uses: ./.github/workflows/cd-docker-helm.yml
+    with:
+      deploy-dry-run: true
+      release-name: test-release
+      chart: oci://ghcr.io/stakater/charts/application
+      namespace: test
+      set-values: |
+        applicationName=test
+        deployment.image.repository=nginx
+        deployment.image.tag=latest
+      tags: |
+        test-tag
+    permissions:
+      contents: read
+      packages: write
+
+  test-oras-tag:
+    name: Test oras-tag
+    needs: [test-docker]
+    uses: ./.github/workflows/oras-tag.yml
+    with:
+      tags: |
+        test-tag
+    permissions:
+      contents: read
+      packages: write

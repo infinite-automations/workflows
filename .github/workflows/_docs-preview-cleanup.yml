@@ -1,0 +1,36 @@
+---
+name: Docs Preview Cleanup
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions: {}
+
+jobs:
+  cleanup:
+    name: Remove Preview
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: gh-pages
+          persist-credentials: true
+
+      - name: Remove Preview
+        shell: bash
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          if [[ -d "pr/${PR_NUMBER}" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git rm -rf "pr/${PR_NUMBER}"
+            git commit -m "docs: remove preview for PR #${PR_NUMBER}"
+            git push
+          else
+            echo "No preview found for PR #${PR_NUMBER}"
+          fi

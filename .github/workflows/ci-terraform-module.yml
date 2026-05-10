@@ -1,0 +1,112 @@
+---
+# Caller permissions (validated statically by GitHub, regardless of dry-run):
+#   required: { contents: write, issues: write, packages: read, pull-requests: write, statuses: write }
+name: CI (Terraform Module)
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode (lint runs normally, release is dry-run)"
+        required: false
+        type: boolean
+        default: false
+      skip-lint:
+        description: "Skip the lint job (useful when lint is run separately)"
+        required: false
+        type: boolean
+        default: false
+      working-dir:
+        description: "Comma-separated list of directories for terraform-docs"
+        required: false
+        type: string
+        default: "."
+      output-file:
+        description: "Output file name for terraform-docs"
+        required: false
+        type: string
+        default: "README.md"
+      output-method:
+        description: "Output method for terraform-docs (inject or replace)"
+        required: false
+        type: string
+        default: "inject"
+      docs-artifact-name:
+        description: "Name of the artifact to upload with generated docs"
+        required: false
+        type: string
+        default: "docs"
+      node-version:
+        description: "Node.js version to use"
+        required: false
+        type: string
+        default: "lts/*"
+      semrel-extra-plugins:
+        description: "Newline-separated list of extra semantic-release plugins"
+        required: false
+        type: string
+    secrets:
+      APP_ID:
+        description: "GitHub App ID for release authentication (optional)"
+        required: false
+      APP_PRIVATE_KEY:
+        description: "GitHub App private key for release authentication (optional)"
+        required: false
+    outputs:
+      lint-status:
+        description: "Lint result status"
+        value: ${{ jobs.lint.outputs.status }}
+      docs-changed:
+        description: "Whether documentation was changed"
+        value: ${{ jobs.docs.outputs.changed }}
+      version:
+        description: "Released version"
+        value: ${{ jobs.release.outputs.version }}
+      published:
+        description: "Whether a new version was published"
+        value: ${{ jobs.release.outputs.published }}
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Lint
+    if: ${{ !inputs.skip-lint }}
+    uses: ./.github/workflows/lint.yml
+    permissions:
+      contents: read
+      packages: read
+      statuses: write
+
+  docs:
+    name: Documentation
+    needs: [lint]
+    if: ${{ !cancelled() && (inputs.skip-lint || needs.lint.result == 'success') }}
+    uses: ./.github/workflows/docs-terraform.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      working-dir: ${{ inputs.working-dir }}
+      output-file: ${{ inputs.output-file }}
+      output-method: ${{ inputs.output-method }}
+      upload-artifact-name: ${{ inputs.docs-artifact-name }}
+    permissions:
+      contents: write
+
+  release:
+    name: Release
+    needs: [lint, docs]
+    if: ${{ !cancelled() && (inputs.skip-lint || needs.lint.result == 'success') && needs.docs.result == 'success' }}
+    uses: ./.github/workflows/release.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      extra-plugins: ${{ inputs.semrel-extra-plugins }}
+      node-version: ${{ inputs.node-version }}
+      download-artifact-name: ${{ inputs.docs-artifact-name }}
+      download-artifact-continue-on-error: true
+    secrets:
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write

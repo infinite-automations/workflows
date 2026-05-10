@@ -1,0 +1,12 @@
+{
+  "name": "Docker in Docker",
+  "image": "mcr.microsoft.com/devcontainers/base:noble",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/node:2": {},
+    "ghcr.io/devcontainers/features/copilot-cli:1": {},
+    "ghcr.io/devcontainers-extra/features/actionlint:1": {},
+    "ghcr.io/devcontainers-extra/features/mkdocs:2": {},
+    "ghcr.io/devcontainers-extra/features/act-asdf:2": {}
+  }
+}

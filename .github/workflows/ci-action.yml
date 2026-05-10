@@ -1,0 +1,136 @@
+---
+# Caller permissions (validated statically by GitHub, regardless of dry-run):
+#   required: { contents: write, issues: write, packages: read, pull-requests: write, statuses: write }
+name: CI (Action)
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode (lint runs normally, release is dry-run)"
+        required: false
+        type: boolean
+        default: false
+      skip-lint:
+        description: "Skip the lint job (useful when lint is run separately)"
+        required: false
+        type: boolean
+        default: false
+      source-file:
+        description: "Path to the action.yml file for docs generation"
+        required: false
+        type: string
+        default: "action.yml"
+      readme-file:
+        description: "Path to the README file to update"
+        required: false
+        type: string
+        default: "README.md"
+      source-dir:
+        description: "Directory of workflow/action files to generate docs for (mutually exclusive with source-file)"
+        required: false
+        type: string
+      docs-dir:
+        description: "Output directory for generated docs (used with source-dir)"
+        required: false
+        type: string
+      source-glob:
+        description: "Glob pattern to match files in source-dir"
+        required: false
+        type: string
+        default: "*.yml"
+      toc-level:
+        description: "TOC heading level for generated docs"
+        required: false
+        type: number
+        default: 2
+      docs-artifact-name:
+        description: "Name of the artifact to upload with generated docs"
+        required: false
+        type: string
+        default: "docs"
+      action-docs-version:
+        description: "Version of action-docs tool to use"
+        required: false
+        type: string
+        # renovate: datasource=npm depName=action-docs
+        default: "2.5.1"
+      node-version:
+        description: "Node.js version to use"
+        required: false
+        type: string
+        default: "lts/*"
+      semrel-extra-plugins:
+        description: "Newline-separated list of extra semantic-release plugins"
+        required: false
+        type: string
+    secrets:
+      APP_ID:
+        description: "GitHub App ID for release authentication (optional)"
+        required: false
+      APP_PRIVATE_KEY:
+        description: "GitHub App private key for release authentication (optional)"
+        required: false
+    outputs:
+      lint-status:
+        description: "Lint result status"
+        value: ${{ jobs.lint.outputs.status }}
+      docs-changed:
+        description: "Whether documentation was changed"
+        value: ${{ jobs.docs.outputs.changed }}
+      version:
+        description: "Released version"
+        value: ${{ jobs.release.outputs.version }}
+      published:
+        description: "Whether a new version was published"
+        value: ${{ jobs.release.outputs.published }}
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Lint
+    if: ${{ !inputs.skip-lint }}
+    uses: ./.github/workflows/lint.yml
+    permissions:
+      contents: read
+      packages: read
+      statuses: write
+
+  docs:
+    name: Documentation
+    needs: [lint]
+    if: ${{ !cancelled() && (inputs.skip-lint || needs.lint.result == 'success') }}
+    uses: ./.github/workflows/docs-action.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      source-file: ${{ inputs.source-file }}
+      readme-file: ${{ inputs.readme-file }}
+      source-dir: ${{ inputs.source-dir }}
+      docs-dir: ${{ inputs.docs-dir }}
+      source-glob: ${{ inputs.source-glob }}
+      toc-level: ${{ inputs.toc-level }}
+      upload-artifact-name: ${{ inputs.docs-artifact-name }}
+      action-docs-version: ${{ inputs.action-docs-version }}
+      node-version: ${{ inputs.node-version }}
+    permissions:
+      contents: write
+
+  release:
+    name: Release
+    needs: [lint, docs]
+    if: ${{ !cancelled() && (inputs.skip-lint || needs.lint.result == 'success') && needs.docs.result == 'success' }}
+    uses: ./.github/workflows/release.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      extra-plugins: ${{ inputs.semrel-extra-plugins }}
+      node-version: ${{ inputs.node-version }}
+      download-artifact-name: ${{ inputs.docs-artifact-name }}
+      download-artifact-continue-on-error: true
+    secrets:
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write

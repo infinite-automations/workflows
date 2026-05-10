@@ -1,0 +1,123 @@
+---
+name: Release
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Lint
+    uses: ./.github/workflows/lint.yml
+    permissions:
+      contents: read
+      issues: write
+      packages: read
+      pull-requests: write
+      statuses: write
+    concurrency:
+      group: ${{ github.workflow }}-lint-${{ github.ref }}
+      cancel-in-progress: true
+    secrets:
+      APP_ID: ${{ secrets.APP_ID_SEMREL }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_KEY_SEMREL }}
+
+  test:
+    name: Test
+    needs: [lint]
+    uses: ./.github/workflows/_test.yml
+    permissions:
+      actions: read
+      checks: write
+      contents: write
+      issues: write
+      packages: write
+      pull-requests: write
+      statuses: write
+    concurrency:
+      group: ${{ github.workflow }}-test-${{ github.ref }}
+      cancel-in-progress: true
+
+  docs:
+    name: Workflow Docs
+    needs: [lint]
+    uses: ./.github/workflows/docs-action.yml
+    with:
+      upload-artifact-name: workflow-docs
+      docs-dir: docs/docs/workflows
+      source-dir: .github/workflows
+      source-glob: "[!_]*.yml"
+      toc-level: 1
+    permissions:
+      contents: read
+    concurrency:
+      group: ${{ github.workflow }}-docs-${{ github.ref }}
+      cancel-in-progress: true
+
+  docs-site:
+    name: Build Docs Site
+    needs: [lint, docs]
+    uses: ./.github/workflows/docs-mkdocs.yml
+    with:
+      pip-plugins: mkdocs-awesome-pages-plugin
+      upload-artifact-name: docs-site
+      download-artifact-name: workflow-docs
+      download-artifact-path: docs/docs/workflows
+      download-artifact-continue-on-error: true
+      deploy-branch: ${{ github.event_name == 'pull_request' && 'gh-pages' || '' }}
+      deploy-prefix: ${{ github.event_name == 'pull_request' && format('pr/{0}', github.event.pull_request.number) || '' }}
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: ${{ github.workflow }}-docs-site-${{ github.ref }}
+      cancel-in-progress: false
+
+  release:
+    name: Release
+    needs: [lint, test, docs-site]
+    uses: ./.github/workflows/release.yml
+    with:
+      dry-run: ${{ github.event_name == 'pull_request' }}
+      download-artifact-name: workflow-docs
+      download-artifact-path: docs/docs/workflows
+      download-artifact-continue-on-error: true
+      extra-plugins: |
+        conventional-changelog-conventionalcommits
+        @semantic-release/changelog
+        @semantic-release/git
+        semantic-release-replace-plugin
+        semantic-release-major-tag
+    secrets:
+      APP_ID: ${{ secrets.APP_ID_SEMREL }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_KEY_SEMREL }}
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    concurrency:
+      group: ${{ github.workflow }}-release-${{ github.ref }}
+      cancel-in-progress: false
+
+  docs-deploy:
+    name: Deploy Docs
+    needs:
+      - docs-site
+      - release
+    uses: ./.github/workflows/docs-mkdocs.yml
+    with:
+      deploy-branch: gh-pages
+      deploy-version: ${{ needs.release.outputs.version || 'latest' }}
+      set-latest: true
+      pip-plugins: mkdocs-awesome-pages-plugin
+      upload-artifact-name: docs-site
+    permissions:
+      contents: write
+      pull-requests: write
+    concurrency:
+      group: ${{ github.workflow }}-docs-deploy-${{ github.ref }}
+      cancel-in-progress: false

@@ -1,0 +1,151 @@
+---
+# checkov:skip=CKV2_GHA_1:Permissions are set by the caller of this reusable workflow
+# Caller permissions:
+#   min: { contents: read }
+#   max: { contents: read, actions: read, checks: write }
+name: Build (.NET)
+
+on:
+  workflow_call:
+    inputs:
+      dotnet-version:
+        description: "The .NET SDK version to install"
+        required: false
+        type: string
+      working-directory:
+        description: "Working directory containing the .NET solution/project"
+        required: false
+        type: string
+        default: "src"
+      build-configuration:
+        description: "Build configuration (e.g. Release, Debug)"
+        required: false
+        type: string
+        default: "Release"
+      publish-output:
+        description: "Output directory for dotnet publish (relative to workspace)"
+        required: false
+        type: string
+        default: "app"
+      upload-artifact-name:
+        description: "Name of the artifact to upload"
+        required: false
+        type: string
+        default: "build"
+      test-reporter:
+        description: "Enable test result reporting (requires checks: write)"
+        required: false
+        type: boolean
+        default: true
+    outputs:
+      upload-artifact-name:
+        description: "Name of the uploaded build artifact"
+        value: ${{ jobs.build.outputs.upload-artifact-name }}
+      status:
+        description: "Build result status (success or failure)"
+        value: ${{ jobs.build.outputs.status }}
+
+jobs:
+  build:
+    name: Build, Test & Publish
+    runs-on: ubuntu-latest
+    outputs:
+      upload-artifact-name: ${{ inputs.upload-artifact-name }}
+      status: ${{ steps.result.outputs.status }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 # v5.2.0
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+
+      - name: Restore
+        shell: bash
+        run: dotnet restore -v d
+        working-directory: ${{ inputs.working-directory }}
+
+      - name: Build
+        id: build
+        shell: bash
+        run: dotnet build -c "${INPUTS_BUILD_CONFIGURATION}" -v d --no-restore
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          INPUTS_BUILD_CONFIGURATION: ${{ inputs.build-configuration }}
+
+      - name: Test
+        id: test
+        shell: bash
+        run: dotnet test -c "${INPUTS_BUILD_CONFIGURATION}" -v d --no-build --logger trx
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          INPUTS_BUILD_CONFIGURATION: ${{ inputs.build-configuration }}
+
+      - name: Test Report
+        if: ${{ inputs.test-reporter && (success() || failure()) }}
+        uses: dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2 # v3.0.0
+        with:
+          name: .NET Tests
+          path: ${{ github.workspace }}/${{ inputs.working-directory }}/**/*.trx
+          reporter: dotnet-trx
+
+      - name: Publish
+        shell: bash
+        run: |
+          dotnet publish \
+            -c "${INPUTS_BUILD_CONFIGURATION}" \
+            -v d \
+            --no-build \
+            -o "${{ github.workspace }}/${INPUTS_PUBLISH_OUTPUT}"
+        working-directory: ${{ inputs.working-directory }}
+        env:
+          INPUTS_BUILD_CONFIGURATION: ${{ inputs.build-configuration }}
+          INPUTS_PUBLISH_OUTPUT: ${{ inputs.publish-output }}
+
+      - name: Upload Artifact
+        id: artifact
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ inputs.upload-artifact-name }}
+          path: ${{ inputs.publish-output }}
+
+      - name: Set Result
+        id: result
+        if: always()
+        shell: bash
+        run: |
+          if [[ "${STEPS_TEST_OUTCOME}" != "failure" && "${STEPS_BUILD_OUTCOME}" != "failure" ]]; then
+            echo "status=success" >> "${GITHUB_OUTPUT}"
+          else
+            echo "status=failure" >> "${GITHUB_OUTPUT}"
+          fi
+        env:
+          STEPS_TEST_OUTCOME: ${{ steps.test.outcome || 'success' }}
+          STEPS_BUILD_OUTCOME: ${{ steps.build.outcome || 'success' }}
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Build Summary (.NET)"
+            echo ""
+            echo "| Item | Value |"
+            echo "|------|-------|"
+            echo "| .NET Version | \`${INPUTS_DOTNET_VERSION}\` |"
+            echo "| Configuration | \`${INPUTS_BUILD_CONFIGURATION}\` |"
+            echo "| Working Directory | \`${INPUTS_WORKING_DIRECTORY}\` |"
+            if [[ "${STEPS_RESULT_OUTPUTS_STATUS}" == "success" ]]; then
+              echo "| Status | :white_check_mark: Passed |"
+            else
+              echo "| Status | :x: Failed |"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          STEPS_RESULT_OUTPUTS_STATUS: ${{ steps.result.outputs.status }}
+          INPUTS_DOTNET_VERSION: ${{ inputs.dotnet-version }}
+          INPUTS_BUILD_CONFIGURATION: ${{ inputs.build-configuration }}
+          INPUTS_WORKING_DIRECTORY: ${{ inputs.working-directory }}

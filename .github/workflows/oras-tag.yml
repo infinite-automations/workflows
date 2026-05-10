@@ -1,0 +1,178 @@
+---
+# checkov:skip=CKV2_GHA_1:Permissions are set by the caller of this reusable workflow
+# Caller permissions:
+#   min: { contents: read, packages: write }
+#   max: { contents: read, packages: write }
+name: OCI Retag
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode (resolve and display but do not tag)"
+        required: false
+        type: boolean
+        default: false
+      image:
+        description: "Full image name without tag (e.g. ghcr.io/owner/repo)"
+        required: false
+        type: string
+        default: "ghcr.io/${{ github.repository }}"
+      source-tag:
+        description: "Source image tag to retag from (skips metadata-action resolution when set)"
+        required: false
+        type: string
+      tag-semver:
+        description: "Semver tag pattern for source resolution (used only when source-tag is not set)"
+        required: false
+        type: string
+        default: "{{version}}"
+      tags:
+        description: "Newline-separated list of new tags to apply"
+        required: false
+        type: string
+      registry:
+        description: "Container registry to authenticate with"
+        required: false
+        type: string
+        default: "ghcr.io"
+      oras-version:
+        description: "ORAS CLI version to install"
+        required: false
+        type: string
+        # renovate: datasource=github-releases depName=oras-project/oras
+        default: "1.2.2"
+    secrets:
+      REGISTRY_USERNAME:
+        description: "Registry username (optional, defaults to github.repository_owner)"
+        required: false
+      REGISTRY_PASSWORD:
+        description: "Registry password (optional, defaults to GITHUB_TOKEN)"
+        required: false
+    outputs:
+      tags:
+        description: "Tags that were applied (newline-separated)"
+        value: ${{ jobs.retag.outputs.tags }}
+
+jobs:
+  retag: # zizmor: ignore[secrets-outside-env]
+    name: Retag Image
+    runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.retag.outputs.tags }}
+    steps:
+      - name: Install ORAS
+        uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
+        with:
+          version: ${{ inputs.oras-version }}
+
+      - name: Docker meta (source tags)
+        id: meta
+        if: inputs.source-tag == ''
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
+        with:
+          images: ${{ inputs.image }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern=${{ inputs.tag-semver }}
+
+      - name: Determine Source Reference
+        id: source
+        shell: bash
+        env:
+          SOURCE_TAG: ${{ inputs.source-tag }}
+          IMAGE: ${{ inputs.image }}
+          META_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          if [[ -n "${SOURCE_TAG}" ]]; then
+            SOURCE_REF="${IMAGE}:${SOURCE_TAG}"
+          else
+            SOURCE_REF=$(echo "${META_TAGS}" | head -n1)
+          fi
+          if [[ -z "${SOURCE_REF}" ]]; then
+            echo "::error::No source tag resolved"
+            exit 1
+          fi
+          echo "ref=${SOURCE_REF}" >> "${GITHUB_OUTPUT}"
+          echo "Resolved source: ${SOURCE_REF}"
+
+      - name: Login to Registry
+        shell: bash
+        env:
+          REGISTRY: ${{ inputs.registry }}
+          USERNAME: ${{ secrets.REGISTRY_USERNAME || github.repository_owner }}
+          PASSWORD: ${{ secrets.REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${PASSWORD}" | oras login "${REGISTRY}" \
+            --username "${USERNAME}" \
+            --password-stdin
+
+      - name: Resolve Digest
+        id: resolve
+        shell: bash
+        env:
+          SOURCE_REF: ${{ steps.source.outputs.ref }}
+        run: |
+          echo "Resolving: ${SOURCE_REF}"
+          DIGEST=$(oras resolve "${SOURCE_REF}")
+          echo "Resolved digest: ${DIGEST}"
+          echo "digest=${DIGEST}" >> "${GITHUB_OUTPUT}"
+
+      - name: Retag Image
+        id: retag
+        shell: bash
+        env:
+          IMAGE: ${{ inputs.image }}
+          SOURCE_REF: ${{ steps.source.outputs.ref }}
+          TAGS: ${{ inputs.tags }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          APPLIED_TAGS=""
+          while IFS= read -r tag || [[ -n "${tag}" ]]; do
+            if [[ -z "${tag}" || "${tag}" =~ ^[[:space:]]*# ]]; then
+              continue
+            fi
+            tag=$(echo "${tag}" | xargs) # trim whitespace
+            TARGET_REF="${IMAGE}:${tag}"
+            if [[ "${DRY_RUN}" == "true" ]]; then
+              echo "[dry-run] Would tag: ${SOURCE_REF} -> ${TARGET_REF}"
+            else
+              echo "Tagging: ${SOURCE_REF} -> ${TARGET_REF}"
+              oras cp "${SOURCE_REF}" "${TARGET_REF}"
+            fi
+            APPLIED_TAGS="${APPLIED_TAGS}${tag}"$'\n'
+          done <<< "${TAGS}"
+
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          {
+            echo "tags<<${EOF}"
+            echo "${APPLIED_TAGS}"
+            echo "${EOF}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## ${{ inputs.dry-run && '[DRY RUN] ' || '' }}OCI Retag Summary"
+            echo ""
+            echo "| Item | Value |"
+            echo "|------|-------|"
+            echo "| Image | \`${INPUTS_IMAGE}\` |"
+            echo "| Source | \`${STEPS_SOURCE_OUTPUTS_REF}\` |"
+            echo "| Digest | \`${STEPS_RESOLVE_OUTPUTS_DIGEST}\` |"
+            echo ""
+            echo "### Tags Applied"
+            echo ""
+            echo "\`\`\`"
+            echo "${STEPS_RETAG_OUTPUTS_TAGS}"
+            echo "\`\`\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          STEPS_SOURCE_OUTPUTS_REF: ${{ steps.source.outputs.ref }}
+          STEPS_RESOLVE_OUTPUTS_DIGEST: ${{ steps.resolve.outputs.digest }}
+          STEPS_RETAG_OUTPUTS_TAGS: ${{ steps.retag.outputs.tags }}
+          INPUTS_IMAGE: ${{ inputs.image }}
