@@ -1,0 +1,250 @@
+---
+# checkov:skip=CKV2_GHA_1:Permissions are set by the caller of this reusable workflow
+# Caller permissions:
+#   min: { contents: read }
+#   max: { contents: read }
+name: Deploy (Helm)
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode (helm diff/template instead of upgrade)"
+        required: false
+        type: boolean
+        default: false
+      release-name:
+        description: "Helm release name"
+        required: true
+        type: string
+      chart:
+        description: "Helm chart reference (e.g. stakater/application or ./chart)"
+        required: true
+        type: string
+      chart-version:
+        description: "Helm chart version"
+        required: false
+        type: string
+      namespace:
+        description: "Kubernetes namespace to deploy to"
+        required: false
+        type: string
+        default: "default"
+      create-namespace:
+        description: "Create namespace if it does not exist"
+        required: false
+        type: boolean
+        default: true
+      values-files:
+        description: "Newline-separated list of values files to pass to Helm"
+        required: false
+        type: string
+      set-values:
+        description: "Newline-separated list of --set arguments (key=value)"
+        required: false
+        type: string
+      helm-repos:
+        description: "Newline-separated list of Helm repos to add (name=url)"
+        required: false
+        type: string
+      image-tag:
+        description: "Image tag to deploy (passed as deployment.image.tag)"
+        required: false
+        type: string
+      environment:
+        description: "GitHub environment name for deployment protection"
+        required: false
+        type: string
+      runner:
+        description: "Runner label for the deploy job"
+        required: false
+        type: string
+        default: "ubuntu-latest"
+      registry:
+        description: "OCI registry to authenticate with for private charts (e.g. ghcr.io)"
+        required: false
+        type: string
+    secrets:
+      KUBECONFIG:
+        description: "Kubeconfig content for cluster authentication (optional)"
+        required: false
+      REGISTRY_USERNAME:
+        description: "Registry username for private Helm charts (optional)"
+        required: false
+      REGISTRY_PASSWORD:
+        description: "Registry password/token for private Helm charts (optional)"
+        required: false
+    outputs:
+      status:
+        description: "Deploy result status (success or failure)"
+        value: ${{ jobs.deploy.outputs.status }}
+
+jobs:
+  deploy:
+    name: Helm Deploy
+    runs-on: ${{ inputs.runner }}
+    environment: ${{ inputs.environment }}
+    outputs:
+      status: ${{ steps.result.outputs.status }}
+    env:
+      HAS_REGISTRY_CREDENTIALS: ${{ secrets.REGISTRY_USERNAME != '' && secrets.REGISTRY_PASSWORD != '' }}
+      HAS_KUBECONFIG: ${{ secrets.KUBECONFIG != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Helm
+        uses: Azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+
+      - name: Configure Kubeconfig
+        if: ${{ env.HAS_KUBECONFIG == 'true' }}
+        shell: bash
+        env:
+          KUBECONFIG_CONTENT: ${{ secrets.KUBECONFIG }}
+        run: |
+          mkdir -p "${HOME}/.kube"
+          echo "${KUBECONFIG_CONTENT}" > "${HOME}/.kube/config"
+          chmod 600 "${HOME}/.kube/config"
+
+      - name: Helm Registry Login
+        if: ${{ env.HAS_REGISTRY_CREDENTIALS == 'true' && inputs.registry != '' }}
+        shell: bash
+        env:
+          REGISTRY: ${{ inputs.registry }}
+          REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+          REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+        run: |
+          echo "${REGISTRY_PASSWORD}" | helm registry login "${REGISTRY}" \
+            --username "${REGISTRY_USERNAME}" \
+            --password-stdin
+
+      - name: Add Helm Repos
+        if: ${{ inputs.helm-repos != '' }}
+        shell: bash
+        env:
+          HELM_REPOS: ${{ inputs.helm-repos }}
+        run: |
+          while IFS= read -r line || [[ -n "${line}" ]]; do
+            if [[ -z "${line}" || "${line}" =~ ^[[:space:]]*# ]]; then
+              continue
+            fi
+            repo_name="${line%%=*}"
+            repo_url="${line#*=}"
+            echo "Adding Helm repo: ${repo_name} -> ${repo_url}"
+            helm repo add "${repo_name}" "${repo_url}"
+          done <<< "${HELM_REPOS}"
+          helm repo update
+
+      - name: Build Helm Arguments
+        id: helm-args
+        shell: bash
+        env:
+          VALUES_FILES: ${{ inputs.values-files }}
+          SET_VALUES: ${{ inputs.set-values }}
+          IMAGE_TAG: ${{ inputs.image-tag }}
+        run: |
+          ARGS=""
+          if [[ -n "${VALUES_FILES}" ]]; then
+            while IFS= read -r line || [[ -n "${line}" ]]; do
+              if [[ -z "${line}" || "${line}" =~ ^[[:space:]]*# ]]; then
+                continue
+              fi
+              ARGS="${ARGS} --values ${line}"
+            done <<< "${VALUES_FILES}"
+          fi
+          if [[ -n "${SET_VALUES}" ]]; then
+            while IFS= read -r line || [[ -n "${line}" ]]; do
+              if [[ -z "${line}" || "${line}" =~ ^[[:space:]]*# ]]; then
+                continue
+              fi
+              ARGS="${ARGS} --set ${line}"
+            done <<< "${SET_VALUES}"
+          fi
+          if [[ -n "${IMAGE_TAG}" ]]; then
+            ARGS="${ARGS} --set deployment.image.tag=${IMAGE_TAG}"
+          fi
+          echo "args=${ARGS}" >> "${GITHUB_OUTPUT}"
+
+      - name: Deploy with Helm
+        id: deploy
+        if: ${{ !inputs.dry-run }}
+        shell: bash
+        run: |
+          # shellcheck disable=SC2086
+          helm upgrade -i \
+            "${INPUTS_RELEASE_NAME}" \
+            "${INPUTS_CHART}" \
+            ${CHART_VERSION_ARG} \
+            --namespace "${INPUTS_NAMESPACE}" \
+            ${{ inputs.create-namespace && '--create-namespace' || '' }} \
+            ${STEPS_HELM_ARGS_OUTPUTS_ARGS}
+        env:
+          INPUTS_RELEASE_NAME: ${{ inputs.release-name }}
+          INPUTS_CHART: ${{ inputs.chart }}
+          INPUTS_NAMESPACE: ${{ inputs.namespace }}
+          CHART_VERSION_ARG: ${{ inputs.chart-version && format('--version {0}', inputs.chart-version) || '' }}
+          STEPS_HELM_ARGS_OUTPUTS_ARGS: ${{ steps.helm-args.outputs.args }}
+
+      - name: Dry Run (Template)
+        id: dry-run
+        if: ${{ inputs.dry-run }}
+        shell: bash
+        run: |
+          # shellcheck disable=SC2086
+          helm template \
+            "${INPUTS_RELEASE_NAME}" \
+            "${INPUTS_CHART}" \
+            ${CHART_VERSION_ARG} \
+            --namespace "${INPUTS_NAMESPACE}" \
+            ${{ inputs.create-namespace && '--create-namespace' || '' }} \
+            ${STEPS_HELM_ARGS_OUTPUTS_ARGS}
+        env:
+          INPUTS_RELEASE_NAME: ${{ inputs.release-name }}
+          INPUTS_CHART: ${{ inputs.chart }}
+          INPUTS_NAMESPACE: ${{ inputs.namespace }}
+          CHART_VERSION_ARG: ${{ inputs.chart-version && format('--version {0}', inputs.chart-version) || '' }}
+          STEPS_HELM_ARGS_OUTPUTS_ARGS: ${{ steps.helm-args.outputs.args }}
+
+      - name: Set Result
+        id: result
+        if: always()
+        shell: bash
+        run: |
+          if [[ "${STEPS_DEPLOY_OUTCOME}" != "failure" ]]; then
+            echo "status=success" >> "${GITHUB_OUTPUT}"
+          else
+            echo "status=failure" >> "${GITHUB_OUTPUT}"
+          fi
+        env:
+          STEPS_DEPLOY_OUTCOME: ${{ steps.deploy.outcome || steps.dry-run.outcome || 'success' }}
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Helm Deploy Summary"
+            echo ""
+            echo "| Item | Value |"
+            echo "|------|-------|"
+            echo "| Release | \`${INPUTS_RELEASE_NAME}\` |"
+            echo "| Chart | \`${INPUTS_CHART}\` |"
+            echo "| Namespace | \`${INPUTS_NAMESPACE}\` |"
+            echo "| Dry Run | ${{ inputs.dry-run }} |"
+            if [[ -n "${INPUTS_IMAGE_TAG}" ]]; then
+              echo "| Image Tag | \`${INPUTS_IMAGE_TAG}\` |"
+            fi
+            if [[ "${STEPS_RESULT_OUTPUTS_STATUS}" == "success" ]]; then
+              echo "| Status | :white_check_mark: Deployed |"
+            else
+              echo "| Status | :x: Failed |"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          STEPS_RESULT_OUTPUTS_STATUS: ${{ steps.result.outputs.status }}
+          INPUTS_RELEASE_NAME: ${{ inputs.release-name }}
+          INPUTS_CHART: ${{ inputs.chart }}
+          INPUTS_NAMESPACE: ${{ inputs.namespace }}
+          INPUTS_IMAGE_TAG: ${{ inputs.image-tag }}

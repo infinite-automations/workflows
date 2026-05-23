@@ -87,3 +87,85 @@ jobs:
       artifact-name: test-docs-terraform
     permissions:
       contents: read
+
+  test-build-dotnet:
+    name: Test build-dotnet
+    uses: ./.github/workflows/build-dotnet.yml
+    with:
+      working-directory: test/dotnet
+    permissions:
+      actions: read
+      checks: write
+      contents: read
+
+  test-docker:
+    name: Test docker
+    uses: ./.github/workflows/docker.yml
+    with:
+      context: test/docker
+    permissions:
+      contents: read
+      packages: write
+
+  test-deploy-helm:
+    name: Test deploy-helm
+    uses: ./.github/workflows/deploy-helm.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      release-name: test-release
+      chart: oci://ghcr.io/stakater/charts/application
+      namespace: test
+      image-tag: latest
+      set-values: |
+        applicationName=test
+        deployment.image.repository=nginx
+    permissions:
+      contents: read
+
+  test-ci-dotnet:
+    name: Test ci-dotnet
+    uses: ./.github/workflows/ci-dotnet.yml
+    with:
+      skip-lint: true
+      working-directory: test/dotnet
+      docker-context: test/docker
+      semrel-extra-plugins: |
+        conventional-changelog-conventionalcommits
+        semantic-release-replace-plugin
+        semantic-release-major-tag
+    permissions:
+      actions: read
+      checks: write
+      contents: write
+      issues: write
+      packages: write
+      pull-requests: write
+      statuses: write
+
+  test-cd-docker-helm:
+    name: Test cd-docker-helm
+    uses: ./.github/workflows/cd-docker-helm.yml
+    with:
+      deploy-dry-run: true
+      release-name: test-release
+      chart: oci://ghcr.io/stakater/charts/application
+      namespace: test
+      image-tag: latest
+      set-values: |
+        applicationName=test
+        deployment.image.repository=nginx
+      tags: |
+        test-tag
+    permissions:
+      contents: read
+      packages: write
+
+  test-oras-tag:
+    name: Test oras-tag
+    uses: ./.github/workflows/oras-tag.yml
+    with:
+      tags: |
+        test-tag
+    permissions:
+      contents: read
+      packages: write

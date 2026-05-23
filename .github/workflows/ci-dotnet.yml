@@ -1,0 +1,215 @@
+---
+# Caller permissions (validated statically by GitHub, regardless of dry-run):
+#   required: { contents: write, issues: write, packages: read, pull-requests: write, statuses: write, actions: read, checks: write }
+name: CI (.NET)
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode (lint and build run normally, release is dry-run)"
+        required: false
+        type: boolean
+        default: false
+      skip-lint:
+        description: "Skip the lint job (useful when lint is run separately)"
+        required: false
+        type: boolean
+        default: false
+      dotnet-version:
+        description: "The .NET SDK version to install"
+        required: false
+        type: string
+      working-directory:
+        description: "Working directory containing the .NET solution/project"
+        required: false
+        type: string
+        default: "."
+      build-configuration:
+        description: "Build configuration (e.g. Release, Debug)"
+        required: false
+        type: string
+        default: "Release"
+      publish-output:
+        description: "Output directory for dotnet publish (relative to workspace)"
+        required: false
+        type: string
+        default: "app"
+      test-reporter:
+        description: "Enable test result reporting (requires checks: write)"
+        required: false
+        type: boolean
+        default: true
+      artifact-name:
+        description: "Name for the build artifact (shared between build and docker jobs)"
+        required: false
+        type: string
+        default: "build"
+      docker-image:
+        description: "Full Docker image name (e.g. ghcr.io/owner/repo)"
+        required: false
+        type: string
+        default: "ghcr.io/${{ github.repository }}"
+      docker-context:
+        description: "Docker build context path"
+        required: false
+        type: string
+        default: "."
+      docker-file:
+        description: "Path to the Dockerfile"
+        required: false
+        type: string
+      docker-target:
+        description: "Docker build target stage"
+        required: false
+        type: string
+      docker-registry:
+        description: "Container registry to authenticate with"
+        required: false
+        type: string
+        default: "ghcr.io"
+      docker-build-args:
+        description: "Newline-separated list of Docker build arguments"
+        required: false
+        type: string
+      docker-platforms:
+        description: "Comma-separated list of target platforms (e.g. linux/amd64,linux/arm64)"
+        required: false
+        type: string
+      docker-tags:
+        description: "Newline-separated extra tags to apply to the Docker image"
+        required: false
+        type: string
+      docker-tag-semver:
+        description: "Docker semver tag pattern (e.g. {{version}})"
+        required: false
+        type: string
+        default: "{{version}}"
+      docker-cache-from:
+        description: "Docker build cache source"
+        required: false
+        type: string
+        default: "type=gha"
+      docker-cache-to:
+        description: "Docker build cache destination"
+        required: false
+        type: string
+        default: "type=gha,mode=max"
+      skip-docker:
+        description: "Skip the Docker build job"
+        required: false
+        type: boolean
+        default: false
+      semrel-extra-plugins:
+        description: "Newline-separated list of extra semantic-release plugins"
+        required: false
+        type: string
+      node-version:
+        description: "Node.js version to use"
+        required: false
+        type: string
+        default: "lts/*"
+    secrets:
+      APP_ID:
+        description: "GitHub App ID for release authentication (optional)"
+        required: false
+      APP_PRIVATE_KEY:
+        description: "GitHub App private key for release authentication (optional)"
+        required: false
+      REGISTRY_USERNAME:
+        description: "Docker registry username (optional, defaults to github.repository_owner)"
+        required: false
+      REGISTRY_PASSWORD:
+        description: "Docker registry password (optional, defaults to GITHUB_TOKEN)"
+        required: false
+    outputs:
+      lint-status:
+        description: "Lint result status"
+        value: ${{ jobs.lint.outputs.status }}
+      build-status:
+        description: "Build result status"
+        value: ${{ jobs.build.outputs.status }}
+      docker-digest:
+        description: "Docker image digest"
+        value: ${{ jobs.docker.outputs.digest }}
+      docker-tags:
+        description: "Docker image tags"
+        value: ${{ jobs.docker.outputs.tags }}
+      version:
+        description: "Released version"
+        value: ${{ jobs.release.outputs.version }}
+      published:
+        description: "Whether a new version was published"
+        value: ${{ jobs.release.outputs.published }}
+
+permissions: {}
+
+jobs:
+  lint:
+    name: Lint
+    if: ${{ !inputs.skip-lint }}
+    uses: ./.github/workflows/lint.yml
+    permissions:
+      contents: read
+      packages: read
+      statuses: write
+
+  build:
+    name: Build & Test
+    needs: [lint]
+    if: ${{ !cancelled() && (inputs.skip-lint || needs.lint.result == 'success') }}
+    uses: ./.github/workflows/build-dotnet.yml
+    with:
+      dotnet-version: ${{ inputs.dotnet-version }}
+      working-directory: ${{ inputs.working-directory }}
+      build-configuration: ${{ inputs.build-configuration }}
+      publish-output: ${{ inputs.publish-output }}
+      upload-artifact-name: ${{ inputs.artifact-name }}
+      test-reporter: ${{ inputs.test-reporter }}
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+
+  docker:
+    name: Docker
+    needs: [lint, build]
+    if: ${{ !cancelled() && !inputs.skip-docker && (inputs.skip-lint || needs.lint.result == 'success') && needs.build.result == 'success' }}
+    uses: ./.github/workflows/docker.yml
+    with:
+      image: ${{ inputs.docker-image }}
+      context: ${{ inputs.docker-context }}
+      file: ${{ inputs.docker-file }}
+      target: ${{ inputs.docker-target }}
+      registry: ${{ inputs.docker-registry }}
+      build-args: ${{ inputs.docker-build-args }}
+      platforms: ${{ inputs.docker-platforms }}
+      tags: ${{ inputs.docker-tags }}
+      tag-semver: ${{ inputs.docker-tag-semver }}
+      cache-from: ${{ inputs.docker-cache-from }}
+      cache-to: ${{ inputs.docker-cache-to }}
+      download-artifact-name: ${{ inputs.artifact-name }}
+      download-artifact-path: ${{ inputs.publish-output }}
+    secrets:
+      REGISTRY_USERNAME: ${{ secrets.REGISTRY_USERNAME }}
+      REGISTRY_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+    permissions:
+      contents: read
+      packages: write
+
+  release:
+    name: Release
+    needs: [lint, build, docker]
+    if: ${{ !cancelled() && (inputs.skip-lint || needs.lint.result == 'success') && needs.build.result == 'success' && (inputs.skip-docker || needs.docker.result == 'success') }}
+    uses: ./.github/workflows/release.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      extra-plugins: ${{ inputs.semrel-extra-plugins }}
+      node-version: ${{ inputs.node-version }}
+    secrets:
+      APP_ID: ${{ secrets.APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write

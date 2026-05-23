@@ -15,20 +15,27 @@ jobs:
     uses: ./.github/workflows/lint.yml
     permissions:
       contents: read
+      issues: write
       packages: read
+      pull-requests: write
       statuses: write
     concurrency:
       group: ${{ github.workflow }}-lint-${{ github.ref }}
       cancel-in-progress: true
+    secrets:
+      APP_ID: ${{ secrets.APP_ID_SEMREL }}
+      APP_PRIVATE_KEY: ${{ secrets.APP_KEY_SEMREL }}
 
   test:
     name: Test
     needs: [lint]
-    uses: ./.github/workflows/self-test.yml
+    uses: ./.github/workflows/_test.yml
     permissions:
+      actions: read
+      checks: write
       contents: write
       issues: write
-      packages: read
+      packages: write
       pull-requests: write
       statuses: write
     concurrency:
@@ -40,9 +47,9 @@ jobs:
     needs: [lint]
     uses: ./.github/workflows/docs-action.yml
     with:
-      source-dir: .github/workflows
-      docs-dir: docs/docs/workflows
       artifact-name: workflow-docs
+      docs-dir: docs/docs/workflows
+      source-dir: .github/workflows
     permissions:
       contents: read
     concurrency:

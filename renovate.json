@@ -1,12 +1,12 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended",
+    "github>infinite-automations/renovate-configs:default",
     ":automergeMinor",
     ":automergeDigest",
-    ":automergePatch",
-    "helpers:pinGitHubActionDigests"
+    ":automergePatch"
   ],
+  "ignorePaths": ["test/**"],
   "labels": ["dependencies"],
   "automerge": true,
   "automergeType": "pr",

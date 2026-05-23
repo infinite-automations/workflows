@@ -8,11 +8,6 @@ name: Lint
 on:
   workflow_call:
     inputs:
-      dry-run:
-        description: "Run in dry-run mode (no effect for linting, always runs)"
-        required: false
-        type: boolean
-        default: false
       config-file:
         description: "Path to the Super-Linter env configuration file"
         required: false
@@ -28,20 +23,30 @@ on:
         required: false
         type: string
 
+    secrets:
+      APP_ID:
+        description: "GitHub App ID for enhanced token (enables zizmor online audits)"
+        required: false
+      APP_PRIVATE_KEY:
+        description: "GitHub App private key for enhanced token"
+        required: false
+
     outputs:
       status:
         description: "Lint result status (success or failure)"
         value: ${{ jobs.lint.outputs.status }}
 
 jobs:
-  lint:
+  lint: # zizmor: ignore[secrets-outside-env]
     name: Super-Linter
     runs-on: ubuntu-latest
+    env:
+      HAS_APP_CREDENTIALS: ${{ secrets.APP_ID != '' && secrets.APP_PRIVATE_KEY != '' }}
     outputs:
       status: ${{ steps.result.outputs.status }}
     steps:
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 0
           persist-credentials: false
@@ -74,11 +79,19 @@ jobs:
             done <<< "${EXTRA_ENV_VARS}"
           fi
 
+      - name: Get GitHub App Token
+        id: app-token
+        if: env.HAS_APP_CREDENTIALS == 'true'
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
       - name: Super-Linter
         id: super-linter
         uses: super-linter/super-linter@9e863354e3ff62e0727d37183162c4a88873df41 # v8.6.0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
           VALIDATE_ALL_CODEBASE: ${{ inputs.validate-all-codebase }}
 
       - name: Set Result
@@ -108,7 +121,6 @@ jobs:
             else
               echo "| Status | :x: Failed |"
             fi
-            echo "| Dry Run | ${{ inputs.dry-run }} |"
             echo "| Linter | [Super-Linter](https://github.com/super-linter/super-linter) v8.6.0 |"
           } >> "${GITHUB_STEP_SUMMARY}"
         env:

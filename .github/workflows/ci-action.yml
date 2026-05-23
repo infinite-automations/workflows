@@ -26,7 +26,39 @@ on:
         required: false
         type: string
         default: "README.md"
-      # jscpd:ignore-start
+      source-dir:
+        description: "Directory of workflow/action files to generate docs for (mutually exclusive with source-file)"
+        required: false
+        type: string
+      docs-dir:
+        description: "Output directory for generated docs (used with source-dir)"
+        required: false
+        type: string
+      source-glob:
+        description: "Glob pattern to match files in source-dir"
+        required: false
+        type: string
+        default: "*.yml"
+      toc-level:
+        description: "TOC heading level for generated docs"
+        required: false
+        type: number
+        default: 2
+      docs-artifact-name:
+        description: "Name of the artifact to upload with generated docs"
+        required: false
+        type: string
+        default: "docs"
+      action-docs-version:
+        description: "Version of action-docs tool to use"
+        required: false
+        type: string
+        default: "2.5.1"
+      node-version:
+        description: "Node.js version to use"
+        required: false
+        type: string
+        default: "lts/*"
       semrel-extra-plugins:
         description: "Newline-separated list of extra semantic-release plugins"
         required: false
@@ -59,13 +91,10 @@ jobs:
     name: Lint
     if: ${{ !inputs.skip-lint }}
     uses: ./.github/workflows/lint.yml
-    with:
-      dry-run: ${{ inputs.dry-run }}
     permissions:
       contents: read
       packages: read
       statuses: write
-    # jscpd:ignore-end
 
   docs:
     name: Documentation
@@ -76,10 +105,16 @@ jobs:
       dry-run: ${{ inputs.dry-run }}
       source-file: ${{ inputs.source-file }}
       readme-file: ${{ inputs.readme-file }}
+      source-dir: ${{ inputs.source-dir }}
+      docs-dir: ${{ inputs.docs-dir }}
+      source-glob: ${{ inputs.source-glob }}
+      toc-level: ${{ inputs.toc-level }}
+      artifact-name: ${{ inputs.docs-artifact-name }}
+      action-docs-version: ${{ inputs.action-docs-version }}
+      node-version: ${{ inputs.node-version }}
     permissions:
       contents: write
 
-  # jscpd:ignore-start
   release:
     name: Release
     needs: [lint, docs]
@@ -88,6 +123,7 @@ jobs:
     with:
       dry-run: ${{ inputs.dry-run }}
       extra-plugins: ${{ inputs.semrel-extra-plugins }}
+      node-version: ${{ inputs.node-version }}
     secrets:
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
@@ -95,4 +131,3 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-  # jscpd:ignore-end

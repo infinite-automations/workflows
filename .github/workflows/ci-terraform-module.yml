@@ -26,7 +26,21 @@ on:
         required: false
         type: string
         default: "README.md"
-      # jscpd:ignore-start
+      output-method:
+        description: "Output method for terraform-docs (inject or replace)"
+        required: false
+        type: string
+        default: "inject"
+      docs-artifact-name:
+        description: "Name of the artifact to upload with generated docs"
+        required: false
+        type: string
+        default: "docs"
+      node-version:
+        description: "Node.js version to use"
+        required: false
+        type: string
+        default: "lts/*"
       semrel-extra-plugins:
         description: "Newline-separated list of extra semantic-release plugins"
         required: false
@@ -59,13 +73,10 @@ jobs:
     name: Lint
     if: ${{ !inputs.skip-lint }}
     uses: ./.github/workflows/lint.yml
-    with:
-      dry-run: ${{ inputs.dry-run }}
     permissions:
       contents: read
       packages: read
       statuses: write
-    # jscpd:ignore-end
 
   docs:
     name: Documentation
@@ -76,10 +87,11 @@ jobs:
       dry-run: ${{ inputs.dry-run }}
       working-dir: ${{ inputs.working-dir }}
       output-file: ${{ inputs.output-file }}
+      output-method: ${{ inputs.output-method }}
+      artifact-name: ${{ inputs.docs-artifact-name }}
     permissions:
       contents: write
 
-  # jscpd:ignore-start
   release:
     name: Release
     needs: [lint, docs]
@@ -88,6 +100,7 @@ jobs:
     with:
       dry-run: ${{ inputs.dry-run }}
       extra-plugins: ${{ inputs.semrel-extra-plugins }}
+      node-version: ${{ inputs.node-version }}
     secrets:
       APP_ID: ${{ secrets.APP_ID }}
       APP_PRIVATE_KEY: ${{ secrets.APP_PRIVATE_KEY }}
@@ -95,4 +108,3 @@ jobs:
       contents: write
       issues: write
       pull-requests: write
-  # jscpd:ignore-end
