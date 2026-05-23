@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../docs-mkdocs/">
+        <link rel="prev" href="../ci-terraform-module/">
       
       
-        <link rel="next" href="../lint/">
+        <link rel="next" href="../docker/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>Documentation (Terraform) - Reusable Workflows</title>
+        <title>Deploy (Helm) - Reusable Workflows</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#documentation-terraform" class="md-skip">
+        <a href="#deploy-helm" class="md-skip">
           Skip to content
         </a>
       
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Documentation (Terraform)
+              Deploy (Helm)
             
           </span>
         </div>
@@ -621,10 +621,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../deploy-helm/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploy (Helm)
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -640,6 +667,70 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secrets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -733,37 +824,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Documentation (Terraform)
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../docs-terraform/" class="md-nav__link">
         
   
   
@@ -779,59 +843,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Usage
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inputs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Inputs
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#outputs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Outputs
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -977,6 +988,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secrets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#outputs" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1007,16 +1029,26 @@
   
 
 
-<h1 id="documentation-terraform">Documentation (Terraform)</h1>
-<p>Generates documentation for Terraform modules using <a href="https://github.com/terraform-docs/gh-actions">terraform-docs</a>.</p>
+<h1 id="deploy-helm">Deploy (Helm)</h1>
+<p>Deploys an application using Helm with optional OCI registry login and Kubernetes cluster authentication.</p>
 <h2 id="usage">Usage</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">jobs</span><span class="p">:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">docs</span><span class="p">:</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">infinite-automations/workflows/.github/workflows/docs-terraform.yml@v1.0.0</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">deploy</span><span class="p">:</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">infinite-automations/workflows/.github/workflows/deploy-helm.yml@v1.0.0</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">with</span><span class="p">:</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="nt">working-dir</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.,modules/vpc,examples/basic&quot;</span>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">permissions</span><span class="p">:</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">      </span><span class="nt">contents</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">write</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="nt">release-name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my-app</span>
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">      </span><span class="nt">chart</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stakater/application</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">      </span><span class="nt">chart-version</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;5.2.3&quot;</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">      </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">production</span>
+<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">      </span><span class="nt">helm-repos</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">        </span><span class="no">stakater=https://stakater.github.io/stakater-charts</span>
+<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">      </span><span class="nt">values-files</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">        </span><span class="no">helm/common.yaml</span>
+<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">      </span><span class="nt">image-tag</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;1.2.3&quot;</span>
+<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">    </span><span class="nt">secrets</span><span class="p">:</span>
+<a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">      </span><span class="nt">KUBECONFIG</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">${{ secrets.KUBECONFIG }}</span>
+<a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">    </span><span class="nt">permissions</span><span class="p">:</span>
+<a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">      </span><span class="nt">contents</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">read</span>
 </code></pre></div>
 <h2 id="inputs">Inputs</h2>
 <table>
@@ -1033,31 +1065,112 @@
 <td><code>dry-run</code></td>
 <td>boolean</td>
 <td><code>false</code></td>
-<td>Generate docs but do not commit</td>
+<td>Run <code>helm template</code> instead of <code>helm upgrade</code></td>
 </tr>
 <tr>
-<td><code>working-dir</code></td>
+<td><code>release-name</code></td>
 <td>string</td>
-<td><code>.</code></td>
-<td>Comma-separated list of directories</td>
+<td>required</td>
+<td>Helm release name</td>
 </tr>
 <tr>
-<td><code>output-file</code></td>
+<td><code>chart</code></td>
 <td>string</td>
-<td><code>README.md</code></td>
-<td>Output filename</td>
+<td>required</td>
+<td>Chart reference (e.g. <code>stakater/application</code>)</td>
 </tr>
 <tr>
-<td><code>output-method</code></td>
+<td><code>chart-version</code></td>
 <td>string</td>
-<td><code>inject</code></td>
-<td>Output method (<code>inject</code> or <code>replace</code>)</td>
+<td></td>
+<td>Chart version constraint</td>
 </tr>
 <tr>
-<td><code>artifact-name</code></td>
+<td><code>namespace</code></td>
 <td>string</td>
-<td><code>docs</code></td>
-<td>Artifact name for generated docs</td>
+<td><code>default</code></td>
+<td>Kubernetes namespace</td>
+</tr>
+<tr>
+<td><code>create-namespace</code></td>
+<td>boolean</td>
+<td><code>true</code></td>
+<td>Create namespace if missing</td>
+</tr>
+<tr>
+<td><code>values-files</code></td>
+<td>string</td>
+<td></td>
+<td>Newline-separated list of values files</td>
+</tr>
+<tr>
+<td><code>set-values</code></td>
+<td>string</td>
+<td></td>
+<td>Newline-separated <code>key=value</code> pairs for <code>--set</code></td>
+</tr>
+<tr>
+<td><code>helm-repos</code></td>
+<td>string</td>
+<td></td>
+<td>Newline-separated repos to add (<code>name=url</code>)</td>
+</tr>
+<tr>
+<td><code>image-tag</code></td>
+<td>string</td>
+<td></td>
+<td>Image tag (passed as <code>deployment.image.tag</code>)</td>
+</tr>
+<tr>
+<td><code>environment</code></td>
+<td>string</td>
+<td></td>
+<td>GitHub environment for deployment protection</td>
+</tr>
+<tr>
+<td><code>runner</code></td>
+<td>string</td>
+<td><code>ubuntu-latest</code></td>
+<td>Runner label</td>
+</tr>
+<tr>
+<td><code>container-image</code></td>
+<td>string</td>
+<td></td>
+<td>Container image to run the job in</td>
+</tr>
+<tr>
+<td><code>registry</code></td>
+<td>string</td>
+<td></td>
+<td>OCI registry for private charts</td>
+</tr>
+</tbody>
+</table>
+<h2 id="secrets">Secrets</h2>
+<table>
+<thead>
+<tr>
+<th>Secret</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>KUBECONFIG</code></td>
+<td>No</td>
+<td>Kubeconfig content for cluster auth</td>
+</tr>
+<tr>
+<td><code>REGISTRY_USERNAME</code></td>
+<td>No</td>
+<td>Username for private Helm chart registry</td>
+</tr>
+<tr>
+<td><code>REGISTRY_PASSWORD</code></td>
+<td>No</td>
+<td>Password for private Helm chart registry</td>
 </tr>
 </tbody>
 </table>
@@ -1071,8 +1184,8 @@
 </thead>
 <tbody>
 <tr>
-<td><code>changed</code></td>
-<td>Whether documentation was changed</td>
+<td><code>status</code></td>
+<td>Deploy result: <code>success</code> or <code>failure</code></td>
 </tr>
 </tbody>
 </table>

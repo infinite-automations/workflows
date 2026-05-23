@@ -11,10 +11,10 @@
       
       
       
-        <link rel="prev" href="../docs-mkdocs/">
+        <link rel="prev" href="../deploy-helm/">
       
       
-        <link rel="next" href="../lint/">
+        <link rel="next" href="../docs-action/">
       
       
         
@@ -25,7 +25,7 @@
     
     
       
-        <title>Documentation (Terraform) - Reusable Workflows</title>
+        <title>Docker Build & Push - Reusable Workflows</title>
       
     
     
@@ -76,7 +76,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#documentation-terraform" class="md-skip">
+        <a href="#docker-build-push" class="md-skip">
           Skip to content
         </a>
       
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Documentation (Terraform)
+              Docker Build &amp; Push
             
           </span>
         </div>
@@ -649,10 +649,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../docker/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Docker Build &amp; Push
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -668,6 +695,70 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Usage
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secrets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Outputs
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -733,37 +824,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    Documentation (Terraform)
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../docs-terraform/" class="md-nav__link">
         
   
   
@@ -779,59 +843,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Usage
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#inputs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Inputs
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#outputs" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Outputs
-      
-    </span>
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -977,6 +988,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#secrets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Secrets
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#outputs" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1007,16 +1029,17 @@
   
 
 
-<h1 id="documentation-terraform">Documentation (Terraform)</h1>
-<p>Generates documentation for Terraform modules using <a href="https://github.com/terraform-docs/gh-actions">terraform-docs</a>.</p>
+<h1 id="docker-build-push">Docker Build &amp; Push</h1>
+<p>Builds and pushes a Docker image using Buildx with GitHub Actions cache.</p>
 <h2 id="usage">Usage</h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nt">jobs</span><span class="p">:</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">docs</span><span class="p">:</span>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">infinite-automations/workflows/.github/workflows/docs-terraform.yml@v1.0.0</span>
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">docker</span><span class="p">:</span>
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">infinite-automations/workflows/.github/workflows/docker.yml@v1.0.0</span>
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">with</span><span class="p">:</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="nt">working-dir</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;.,modules/vpc,examples/basic&quot;</span>
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="nt">context</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">src/MyApp</span>
 <a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">    </span><span class="nt">permissions</span><span class="p">:</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">      </span><span class="nt">contents</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">write</span>
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">      </span><span class="nt">contents</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">read</span>
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">      </span><span class="nt">packages</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">write</span>
 </code></pre></div>
 <h2 id="inputs">Inputs</h2>
 <table>
@@ -1033,31 +1056,101 @@
 <td><code>dry-run</code></td>
 <td>boolean</td>
 <td><code>false</code></td>
-<td>Generate docs but do not commit</td>
+<td>Build but do not push</td>
 </tr>
 <tr>
-<td><code>working-dir</code></td>
+<td><code>image</code></td>
+<td>string</td>
+<td><code>ghcr.io/${{ github.repository }}</code></td>
+<td>Full image name</td>
+</tr>
+<tr>
+<td><code>context</code></td>
 <td>string</td>
 <td><code>.</code></td>
-<td>Comma-separated list of directories</td>
+<td>Docker build context path</td>
 </tr>
 <tr>
-<td><code>output-file</code></td>
+<td><code>file</code></td>
 <td>string</td>
-<td><code>README.md</code></td>
-<td>Output filename</td>
+<td></td>
+<td>Dockerfile path (relative to context)</td>
 </tr>
 <tr>
-<td><code>output-method</code></td>
+<td><code>tags</code></td>
 <td>string</td>
-<td><code>inject</code></td>
-<td>Output method (<code>inject</code> or <code>replace</code>)</td>
+<td></td>
+<td>Newline-separated extra tags</td>
 </tr>
 <tr>
-<td><code>artifact-name</code></td>
+<td><code>tag-semver</code></td>
 <td>string</td>
-<td><code>docs</code></td>
-<td>Artifact name for generated docs</td>
+<td><code>{{version}}</code></td>
+<td>SemVer tag pattern for metadata-action</td>
+</tr>
+<tr>
+<td><code>tag-latest</code></td>
+<td>boolean</td>
+<td><code>false</code></td>
+<td>Also tag as <code>latest</code></td>
+</tr>
+<tr>
+<td><code>registry</code></td>
+<td>string</td>
+<td><code>ghcr.io</code></td>
+<td>Container registry to authenticate with</td>
+</tr>
+<tr>
+<td><code>build-args</code></td>
+<td>string</td>
+<td></td>
+<td>Newline-separated build arguments</td>
+</tr>
+<tr>
+<td><code>platforms</code></td>
+<td>string</td>
+<td></td>
+<td>Target platforms (e.g. <code>linux/amd64,linux/arm64</code>)</td>
+</tr>
+<tr>
+<td><code>cache-from</code></td>
+<td>string</td>
+<td><code>type=gha</code></td>
+<td>Cache source</td>
+</tr>
+<tr>
+<td><code>cache-to</code></td>
+<td>string</td>
+<td><code>type=gha,mode=max</code></td>
+<td>Cache destination</td>
+</tr>
+<tr>
+<td><code>target</code></td>
+<td>string</td>
+<td></td>
+<td>Docker build target stage</td>
+</tr>
+</tbody>
+</table>
+<h2 id="secrets">Secrets</h2>
+<table>
+<thead>
+<tr>
+<th>Secret</th>
+<th>Required</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>REGISTRY_USERNAME</code></td>
+<td>No</td>
+<td>Registry username (defaults to repository owner)</td>
+</tr>
+<tr>
+<td><code>REGISTRY_PASSWORD</code></td>
+<td>No</td>
+<td>Registry password (defaults to <code>GITHUB_TOKEN</code>)</td>
 </tr>
 </tbody>
 </table>
@@ -1071,8 +1164,16 @@
 </thead>
 <tbody>
 <tr>
-<td><code>changed</code></td>
-<td>Whether documentation was changed</td>
+<td><code>image</code></td>
+<td>Full image reference with digest</td>
+</tr>
+<tr>
+<td><code>digest</code></td>
+<td>Image digest</td>
+</tr>
+<tr>
+<td><code>tags</code></td>
+<td>Applied image tags (newline-separated)</td>
 </tr>
 </tbody>
 </table>
