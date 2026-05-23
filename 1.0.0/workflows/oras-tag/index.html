@@ -860,6 +860,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-explicit-source-tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        With Explicit Source Tag
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -985,6 +1002,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="Usage">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#with-explicit-source-tag" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        With Explicit Source Tag
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1066,13 +1100,30 @@
 <a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">      </span><span class="nt">contents</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">read</span>
 <a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">      </span><span class="nt">packages</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">write</span>
 </code></pre></div>
+<h3 id="with-explicit-source-tag">With Explicit Source Tag</h3>
+<p>When triggered by a <code>release</code> event, auto-resolution via <code>docker/metadata-action</code> may not find the correct source. Use <code>source-tag</code> to specify it explicitly:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">jobs</span><span class="p">:</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">retag</span><span class="p">:</span>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">uses</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">infinite-automations/workflows/.github/workflows/oras-tag.yml@v1.0.0</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">with</span><span class="p">:</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">      </span><span class="nt">image</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ghcr.io/my-org/my-app</span>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">      </span><span class="nt">source-tag</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sha-${{ github.sha }}</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">      </span><span class="nt">tags</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">        </span><span class="no">${{ github.event.release.tag_name }}</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">        </span><span class="no">latest</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="nt">permissions</span><span class="p">:</span>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">      </span><span class="nt">contents</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">read</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">      </span><span class="nt">packages</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">write</span>
+</code></pre></div>
 <h2 id="source-tag-resolution">Source Tag Resolution</h2>
-<p>When <code>source-tag</code> is not provided, it is resolved automatically:</p>
+<p>When <code>source-tag</code> is not provided, <code>docker/metadata-action</code> resolves the source automatically using these tag types (first match wins):</p>
 <ol>
-<li><strong>Release event</strong> → uses <code>github.event.release.target_commitish</code> (e.g. <code>main</code>)</li>
-<li><strong>Other events</strong> → uses <code>github.ref_name</code></li>
+<li><code>type=sha</code> → commit SHA tag (e.g. <code>sha-abc1234</code>)</li>
+<li><code>type=ref,event=branch</code> → branch name (e.g. <code>main</code>)</li>
+<li><code>type=ref,event=pr</code> → PR number (e.g. <code>pr-42</code>)</li>
+<li><code>type=semver,pattern=...</code> → SemVer from release tag</li>
 </ol>
-<p>This matches the <code>type=ref,event=branch</code> tag that <a href="../docker/"><code>docker.yml</code></a> generates during CI, allowing the CD workflow to find the image without knowing the exact tag.</p>
+<p>This works well for <code>push</code> and <code>pull_request</code> events. For <code>release</code> events, prefer setting <code>source-tag</code> explicitly to avoid ambiguity.</p>
 <h2 id="inputs">Inputs</h2>
 <table>
 <thead>
@@ -1093,26 +1144,26 @@
 <tr>
 <td><code>image</code></td>
 <td>string</td>
-<td>required</td>
+<td><code>ghcr.io/${{ github.repository }}</code></td>
 <td>Full image name without tag</td>
 </tr>
 <tr>
 <td><code>source-tag</code></td>
 <td>string</td>
 <td></td>
-<td>Tag to retag from (auto-resolved if empty)</td>
+<td>Source image tag to retag from (skips metadata-action if set)</td>
+</tr>
+<tr>
+<td><code>tag-semver</code></td>
+<td>string</td>
+<td><code>{{version}}</code></td>
+<td>SemVer pattern for source resolution (used when source-tag is not set)</td>
 </tr>
 <tr>
 <td><code>tags</code></td>
 <td>string</td>
 <td></td>
 <td>Newline-separated list of new tags to apply</td>
-</tr>
-<tr>
-<td><code>tag-latest</code></td>
-<td>boolean</td>
-<td><code>false</code></td>
-<td>Also tag as <code>latest</code></td>
 </tr>
 <tr>
 <td><code>registry</code></td>
