@@ -17,13 +17,6 @@
 | `APP_PRIVATE_KEY` | <p>GitHub App private key for enhanced token</p> | `false` |
 
 
-## Outputs
-
-| name | description |
-| --- | --- |
-| `status` | <p>Lint result status (success or failure)</p> |
-
-
 ## Usage
 
 ```yaml

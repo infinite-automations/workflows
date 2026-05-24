@@ -5,6 +5,7 @@
 | name | description | type | required | default |
 | --- | --- | --- | --- | --- |
 | `dry-run` | <p>Run in dry-run mode (generate docs but do not commit)</p> | `boolean` | `false` | `false` |
+| `git-push` | <p>Push generated docs directly (set false when using artifacts/semrel)</p> | `boolean` | `false` | `false` |
 | `working-dir` | <p>Comma-separated list of directories to generate docs for</p> | `string` | `false` | `.` |
 | `output-file` | <p>Output file name for generated docs</p> | `string` | `false` | `README.md` |
 | `output-method` | <p>Output method (inject or replace)</p> | `string` | `false` | `inject` |
@@ -27,6 +28,13 @@ jobs:
     with:
       dry-run:
       # Run in dry-run mode (generate docs but do not commit)
+      #
+      # Type: boolean
+      # Required: false
+      # Default: false
+
+      git-push:
+      # Push generated docs directly (set false when using artifacts/semrel)
       #
       # Type: boolean
       # Required: false
