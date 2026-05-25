@@ -1,3 +1,9 @@
+## [1.1.0](https://github.com/infinite-automations/workflows/compare/v1.0.1...v1.1.0) (2026-05-25)
+
+### Features
+
+* **oci-push:** add workflow to push oci artifacts ([#3](https://github.com/infinite-automations/workflows/issues/3)) ([4731499](https://github.com/infinite-automations/workflows/commit/47314994a9cddbc217d95b94bdcd7d26e7e38c04))
+
 ## [1.0.1](https://github.com/infinite-automations/workflows/compare/v1.0.0...v1.0.1) (2026-05-24)
 
 ### Bug Fixes
