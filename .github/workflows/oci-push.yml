@@ -1,0 +1,278 @@
+---
+# checkov:skip=CKV2_GHA_1:Permissions are set by the caller of this reusable workflow
+# Caller permissions:
+#   min: { contents: read, packages: write }
+#   max: { contents: read, packages: write }
+name: OCI Push
+
+on:
+  workflow_call:
+    inputs:
+      dry-run:
+        description: "Run in dry-run mode (pack but do not push)"
+        required: false
+        type: boolean
+        default: false
+      artifact:
+        description: "Full artifact reference without tag (e.g. ghcr.io/owner/repo/my-chart)"
+        required: true
+        type: string
+      path:
+        description: "Path to the directory or file to pack and push"
+        required: true
+        type: string
+      version:
+        description: "Artifact version tag (overrides auto-detection)"
+        required: false
+        type: string
+      tag-semver:
+        description: "Semver tag pattern for auto-detection (used only when version is not set)"
+        required: false
+        type: string
+        default: "{{version}}"
+      tags:
+        description: "Newline-separated list of additional tags to apply"
+        required: false
+        type: string
+      registry:
+        description: "Container registry to authenticate with"
+        required: false
+        type: string
+        default: "ghcr.io"
+      artifact-type:
+        description: "Artifact type to set in the OCI manifest (e.g. application/vnd.cncf.helm.config.v1+json)"
+        required: false
+        type: string
+      pack-command:
+        description: "Custom pack command to run before pushing (e.g. 'helm package .'). Working directory is set to the path input."
+        required: false
+        type: string
+      pack-output:
+        description: "Path to the packed artifact file to push (relative to workspace). Required when pack-command is set."
+        required: false
+        type: string
+      annotations:
+        description: "Newline-separated list of annotations (key=value) to attach to the artifact"
+        required: false
+        type: string
+      oras-version:
+        description: "ORAS CLI version to install"
+        required: false
+        type: string
+        # renovate: datasource=github-releases depName=oras-project/oras
+        default: "1.2.2"
+    secrets:
+      REGISTRY_USERNAME:
+        description: "Registry username (optional, defaults to github.repository_owner)"
+        required: false
+      REGISTRY_PASSWORD:
+        description: "Registry password (optional, defaults to GITHUB_TOKEN)"
+        required: false
+    outputs:
+      digest:
+        description: "Pushed artifact digest"
+        value: ${{ jobs.push.outputs.digest }}
+      reference:
+        description: "Full artifact reference with digest"
+        value: ${{ jobs.push.outputs.reference }}
+      tags:
+        description: "Tags applied to the artifact (newline-separated)"
+        value: ${{ jobs.push.outputs.tags }}
+
+jobs:
+  push: # zizmor: ignore[secrets-outside-env]
+    name: Push Artifact
+    runs-on: ubuntu-latest
+    outputs:
+      digest: ${{ steps.push.outputs.digest }}
+      reference: ${{ steps.push.outputs.reference }}
+      tags: ${{ steps.push.outputs.tags }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install ORAS
+        uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
+        with:
+          version: ${{ inputs.oras-version }}
+
+      - name: Docker meta (version tags)
+        id: meta
+        if: inputs.version == ''
+        uses: docker/metadata-action@80c7e94dd9b9319bd5eb7a0e0fe9291e23a2a2e9 # v6.1.0
+        with:
+          images: ${{ inputs.artifact }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern=${{ inputs.tag-semver }}
+
+      - name: Determine Tags
+        id: tags
+        shell: bash
+        env:
+          VERSION: ${{ inputs.version }}
+          ARTIFACT: ${{ inputs.artifact }}
+          META_TAGS: ${{ steps.meta.outputs.tags }}
+          EXTRA_TAGS: ${{ inputs.tags }}
+        run: |
+          ALL_TAGS=""
+          if [[ -n "${VERSION}" ]]; then
+            ALL_TAGS="${ARTIFACT}:${VERSION}"$'\n'
+          elif [[ -n "${META_TAGS}" ]]; then
+            ALL_TAGS="${META_TAGS}"$'\n'
+          else
+            echo "::error::No version or tags resolved"
+            exit 1
+          fi
+          if [[ -n "${EXTRA_TAGS}" ]]; then
+            while IFS= read -r tag || [[ -n "${tag}" ]]; do
+              if [[ -z "${tag}" || "${tag}" =~ ^[[:space:]]*# ]]; then
+                continue
+              fi
+              tag=$(echo "${tag}" | xargs)
+              ALL_TAGS="${ALL_TAGS}${ARTIFACT}:${tag}"$'\n'
+            done <<< "${EXTRA_TAGS}"
+          fi
+          # Extract first tag as primary
+          PRIMARY_TAG=$(echo "${ALL_TAGS}" | head -n1)
+          echo "primary=${PRIMARY_TAG}" >> "${GITHUB_OUTPUT}"
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          {
+            echo "all<<${EOF}"
+            echo "${ALL_TAGS}"
+            echo "${EOF}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Login to Registry
+        shell: bash
+        env:
+          REGISTRY: ${{ inputs.registry }}
+          USERNAME: ${{ secrets.REGISTRY_USERNAME || github.repository_owner }}
+          PASSWORD: ${{ secrets.REGISTRY_PASSWORD || secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${PASSWORD}" | oras login "${REGISTRY}" \
+            --username "${USERNAME}" \
+            --password-stdin
+
+      - name: Pack Artifact
+        id: pack
+        if: inputs.pack-command != ''
+        shell: bash
+        working-directory: ${{ inputs.path }}
+        env:
+          PACK_COMMAND: ${{ inputs.pack-command }}
+        run: |
+          echo "Running pack command: ${PACK_COMMAND}"
+          eval "${PACK_COMMAND}"
+
+      - name: Push Artifact
+        id: push
+        shell: bash
+        env:
+          ARTIFACT: ${{ inputs.artifact }}
+          PATH_INPUT: ${{ inputs.path }}
+          PACK_OUTPUT: ${{ inputs.pack-output }}
+          PRIMARY_TAG: ${{ steps.tags.outputs.primary }}
+          ALL_TAGS: ${{ steps.tags.outputs.all }}
+          ARTIFACT_TYPE: ${{ inputs.artifact-type }}
+          ANNOTATIONS: ${{ inputs.annotations }}
+          DRY_RUN: ${{ inputs.dry-run }}
+        run: |
+          # Determine what to push
+          if [[ -n "${PACK_OUTPUT}" ]]; then
+            PUSH_TARGET="${PACK_OUTPUT}"
+          elif [[ -d "${PATH_INPUT}" ]]; then
+            PUSH_TARGET="${PATH_INPUT}"
+          else
+            PUSH_TARGET="${PATH_INPUT}"
+          fi
+
+          # Build ORAS push arguments
+          ORAS_ARGS=""
+          if [[ -n "${ARTIFACT_TYPE}" ]]; then
+            ORAS_ARGS="${ORAS_ARGS} --artifact-type ${ARTIFACT_TYPE}"
+          fi
+          if [[ -n "${ANNOTATIONS}" ]]; then
+            while IFS= read -r ann || [[ -n "${ann}" ]]; do
+              if [[ -z "${ann}" || "${ann}" =~ ^[[:space:]]*# ]]; then
+                continue
+              fi
+              ORAS_ARGS="${ORAS_ARGS} --annotation ${ann}"
+            done <<< "${ANNOTATIONS}"
+          fi
+
+          if [[ "${DRY_RUN}" == "true" ]]; then
+            echo "[dry-run] Would push: ${PUSH_TARGET} -> ${PRIMARY_TAG}"
+            echo "digest=dry-run" >> "${GITHUB_OUTPUT}"
+            echo "reference=${PRIMARY_TAG}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "Pushing: ${PUSH_TARGET} -> ${PRIMARY_TAG}"
+            # shellcheck disable=SC2086
+            DIGEST=$(oras push ${ORAS_ARGS} "${PRIMARY_TAG}" "${PUSH_TARGET}" 2>&1 | tee /dev/stderr | grep -oP 'sha256:[a-f0-9]+' | tail -1)
+            echo "Pushed with digest: ${DIGEST}"
+            echo "digest=${DIGEST}" >> "${GITHUB_OUTPUT}"
+            echo "reference=${ARTIFACT}@${DIGEST}" >> "${GITHUB_OUTPUT}"
+          fi
+
+          # Apply additional tags
+          APPLIED_TAGS=""
+          while IFS= read -r full_tag || [[ -n "${full_tag}" ]]; do
+            if [[ -z "${full_tag}" ]]; then
+              continue
+            fi
+            tag="${full_tag##*:}"
+            APPLIED_TAGS="${APPLIED_TAGS}${tag}"$'\n'
+            if [[ "${full_tag}" == "${PRIMARY_TAG}" ]]; then
+              continue
+            fi
+            if [[ "${DRY_RUN}" == "true" ]]; then
+              echo "[dry-run] Would also tag: ${full_tag}"
+            else
+              echo "Applying additional tag: ${full_tag}"
+              oras cp "${PRIMARY_TAG}" "${full_tag}"
+            fi
+          done <<< "${ALL_TAGS}"
+
+          EOF=$(dd if=/dev/urandom bs=15 count=1 status=none | base64)
+          {
+            echo "tags<<${EOF}"
+            echo "${APPLIED_TAGS}"
+            echo "${EOF}"
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## ${{ inputs.dry-run && '[DRY RUN] ' || '' }}OCI Push Summary"
+            echo ""
+            echo "| Item | Value |"
+            echo "|------|-------|"
+            echo "| Artifact | \`${INPUTS_ARTIFACT}\` |"
+            echo "| Path | \`${INPUTS_PATH}\` |"
+            if [[ -n "${STEPS_PUSH_OUTPUTS_DIGEST}" && "${STEPS_PUSH_OUTPUTS_DIGEST}" != "dry-run" ]]; then
+              echo "| Digest | \`${STEPS_PUSH_OUTPUTS_DIGEST}\` |"
+            fi
+            if [[ "${INPUTS_DRY_RUN}" == "true" ]]; then
+              echo "| Pushed | :no_entry_sign: Dry Run |"
+            else
+              echo "| Pushed | :white_check_mark: Yes |"
+            fi
+            echo ""
+            echo "### Tags"
+            echo ""
+            echo "\`\`\`"
+            echo "${STEPS_PUSH_OUTPUTS_TAGS}"
+            echo "\`\`\`"
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          STEPS_PUSH_OUTPUTS_DIGEST: ${{ steps.push.outputs.digest }}
+          STEPS_PUSH_OUTPUTS_TAGS: ${{ steps.push.outputs.tags }}
+          INPUTS_ARTIFACT: ${{ inputs.artifact }}
+          INPUTS_PATH: ${{ inputs.path }}
+          INPUTS_DRY_RUN: ${{ inputs.dry-run }}
