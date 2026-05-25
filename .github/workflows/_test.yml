@@ -152,6 +152,7 @@ jobs:
     needs: [test-docker]
     uses: ./.github/workflows/cd-docker-helm.yml
     with:
+      image: ghcr.io/${{ github.repository }}/test
       deploy-dry-run: true
       release-name: test-release
       chart: oci://ghcr.io/stakater/charts/application
@@ -171,8 +172,55 @@ jobs:
     needs: [test-docker]
     uses: ./.github/workflows/oras-tag.yml
     with:
+      image: ghcr.io/${{ github.repository }}/test
       tags: |
         test-tag
     permissions:
       contents: read
       packages: write
+
+  test-oci-push:
+    name: Test oci-push
+    uses: ./.github/workflows/oci-push.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      artifact: ghcr.io/${{ github.repository }}/test-chart
+      path: test/helm
+      version: 0.1.0
+      pack-command: "helm package ."
+      pack-output: test/helm/test-chart-0.1.0.tgz
+      artifact-type: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+    permissions:
+      contents: read
+      packages: write
+
+  test-oci-push-helm-pull:
+    name: Test oci-push (helm pull)
+    if: inputs.dry-run == false
+    needs: [test-oci-push]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Login to GHCR with Helm
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${GITHUB_TOKEN}" | helm registry login ghcr.io \
+            --username "${{ github.repository_owner }}" \
+            --password-stdin
+
+      - name: Pull chart from OCI registry
+        shell: bash
+        run: |
+          helm pull "oci://ghcr.io/${{ github.repository }}/test-chart" --version 0.1.0
+
+      - name: Verify pulled chart
+        shell: bash
+        run: |
+          ls -la test-chart-0.1.0.tgz
+          tar -tzf test-chart-0.1.0.tgz
+          helm show chart test-chart-0.1.0.tgz | grep -q "name: test-chart"
+          echo "Chart successfully pulled and verified"
