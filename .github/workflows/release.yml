@@ -45,6 +45,44 @@ on:
         required: false
         type: boolean
         default: false
+      semantic-version:
+        description: "Version range for semantic-release (e.g. '19.0.5')"
+        required: false
+        type: string
+      branches:
+        description: "Branches on which releases should happen (semantic-release v16+, JSON array or string)"
+        required: false
+        type: string
+      branch:
+        description: "Branch on which releases should happen (semantic-release older than v16)"
+        required: false
+        type: string
+      working-directory:
+        description: "Working directory for semantic release (useful for monorepos)"
+        required: false
+        type: string
+      tag-format:
+        description: "Tag format override, useful for monorepos (e.g. 'my-package-v${version}')"
+        required: false
+        type: string
+      extends:
+        description: "Newline-separated list of sharable configurations to extend"
+        required: false
+        type: string
+      ci:
+        description: "Whether to run semantic release with CI support (semantic-release v16+)"
+        required: false
+        type: boolean
+        default: true
+      unset-gha-env:
+        description: "Unset the GITHUB_ACTIONS env variable (useful for PR dry-run validation)"
+        required: false
+        type: boolean
+        default: false
+      repository-url:
+        description: "Git repository URL (defaults to current repository)"
+        required: false
+        type: string
     secrets:
       APP_ID:
         description: "GitHub App ID for authentication (optional, falls back to GITHUB_TOKEN)"
@@ -122,9 +160,17 @@ jobs:
         id: semantic-release
         uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
         with:
+          semantic_version: ${{ inputs.semantic-version }}
+          branches: ${{ inputs.branches }}
+          branch: ${{ inputs.branch }}
           extra_plugins: ${{ inputs.extra-plugins }}
+          extends: ${{ inputs.extends }}
           dry_run: ${{ inputs.dry-run }}
-          ci: true
+          ci: ${{ inputs.ci }}
+          unset_gha_env: ${{ inputs.unset-gha-env }}
+          working_directory: ${{ inputs.working-directory }}
+          tag_format: ${{ inputs.tag-format }}
+          repository_url: ${{ inputs.repository-url }}
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
 

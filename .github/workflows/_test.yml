@@ -43,6 +43,22 @@ jobs:
       issues: write
       pull-requests: write
 
+  test-release-working-directory:
+    name: Test release (working-directory / monorepo)
+    uses: ./.github/workflows/release.yml
+    with:
+      dry-run: ${{ inputs.dry-run }}
+      working-directory: test/semrel
+      tag-format: "test-semrel-v${version}"
+      extra-plugins: |
+        conventional-changelog-conventionalcommits
+        semantic-release-replace-plugin
+        semantic-release-major-tag
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
   test-ci-terraform-module:
     name: Test ci-terraform-module
     uses: ./.github/workflows/ci-terraform-module.yml
