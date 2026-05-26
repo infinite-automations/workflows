@@ -1,0 +1,35 @@
+{
+  "plugins": [
+    [
+      "@semantic-release/commit-analyzer",
+      {
+        "preset": "conventionalcommits"
+      }
+    ],
+    [
+      "@semantic-release/release-notes-generator",
+      {
+        "preset": "conventionalcommits"
+      }
+    ],
+    [
+      "semantic-release-replace-plugin",
+      {
+        "replacements": [
+          {
+            "files": ["VERSION"],
+            "from": ".*",
+            "to": "${nextRelease.version}",
+            "countMatches": false
+          }
+        ]
+      }
+    ],
+    [
+      "semantic-release-major-tag",
+      {
+        "customTags": ["test-semrel-v${major}"]
+      }
+    ]
+  ]
+}
