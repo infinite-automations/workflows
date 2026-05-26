@@ -200,18 +200,17 @@ jobs:
     uses: ./.github/workflows/oci-push.yml
     with:
       dry-run: ${{ inputs.dry-run }}
-      artifact: ghcr.io/${{ github.repository }}/test-chart
+      artifact: ghcr.io/${{ github.repository }}/test-oci
       path: test/helm
       version: 0.1.0
-      pack-command: "helm package ."
-      pack-output: test/helm/test-chart-0.1.0.tgz
+      pack-output: test-oci-0.1.0.tgz
       artifact-type: application/vnd.cncf.helm.chart.content.v1.tar+gzip
     permissions:
       contents: read
       packages: write
 
-  test-oci-push-helm-pull:
-    name: Test oci-push (helm pull)
+  test-oci-push-verify:
+    name: Test oci-push (verify)
     if: inputs.dry-run == false
     needs: [test-oci-push]
     runs-on: ubuntu-latest
@@ -219,24 +218,23 @@ jobs:
       contents: read
       packages: read
     steps:
-      - name: Login to GHCR with Helm
+      - name: Login to GHCR
         shell: bash
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "${GITHUB_TOKEN}" | helm registry login ghcr.io \
+          echo "${GITHUB_TOKEN}" | oras login ghcr.io \
             --username "${{ github.repository_owner }}" \
             --password-stdin
 
-      - name: Pull chart from OCI registry
+      - name: Pull artifact from OCI registry
         shell: bash
         run: |
-          helm pull "oci://ghcr.io/${{ github.repository }}/test-chart" --version 0.1.0
+          oras pull "ghcr.io/${{ github.repository }}/test-oci:0.1.0" -o .
 
-      - name: Verify pulled chart
+      - name: Verify pulled artifact
         shell: bash
         run: |
-          ls -la test-chart-0.1.0.tgz
-          tar -tzf test-chart-0.1.0.tgz
-          helm show chart test-chart-0.1.0.tgz | grep -q "name: test-chart"
-          echo "Chart successfully pulled and verified"
+          ls -la test-oci-0.1.0.tgz
+          tar -tzf test-oci-0.1.0.tgz | head -5
+          echo "Artifact successfully pulled and verified"

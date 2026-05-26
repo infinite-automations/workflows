@@ -47,18 +47,37 @@ on:
         description: "Artifact type to set in the OCI manifest (e.g. application/vnd.cncf.helm.config.v1+json)"
         required: false
         type: string
-      pack-command:
-        description: "Custom pack command to run before pushing (e.g. 'helm package .'). Working directory is set to the path input."
-        required: false
-        type: string
       pack-output:
-        description: "Path to the packed artifact file to push (relative to workspace). Required when pack-command is set."
+        description: "Path to write the packed .tgz archive (relative to workspace). When set, the path input is packed into a .tgz at this location before pushing."
         required: false
         type: string
       annotations:
         description: "Newline-separated list of annotations (key=value) to attach to the artifact"
         required: false
         type: string
+      download-artifact-name:
+        description: "Name of a build artifact to download before packing (empty to skip)"
+        required: false
+        type: string
+      download-all-artifacts:
+        description: "Download all artifacts before packing"
+        required: false
+        type: boolean
+        default: false
+      download-artifact-path:
+        description: "Path to download the artifact to (relative to workspace)"
+        required: false
+        type: string
+      download-artifact-merge-multiple:
+        description: "Merge multiple artifacts into a single directory"
+        required: false
+        type: boolean
+        default: true
+      download-artifact-continue-on-error:
+        description: "Continue workflow if artifact download fails"
+        required: false
+        type: boolean
+        default: false
       oras-version:
         description: "ORAS CLI version to install"
         required: false
@@ -97,6 +116,15 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
           persist-credentials: false
+
+      - name: Download Artifact
+        if: ${{ inputs.download-artifact-name != '' || inputs.download-all-artifacts }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.download-artifact-name }}
+          path: ${{ inputs.download-artifact-path }}
+          merge-multiple: ${{ inputs.download-artifact-merge-multiple }}
+        continue-on-error: ${{ inputs.download-artifact-continue-on-error }}
 
       - name: Install ORAS
         uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
@@ -165,14 +193,14 @@ jobs:
 
       - name: Pack Artifact
         id: pack
-        if: inputs.pack-command != ''
+        if: inputs.pack-output != ''
         shell: bash
-        working-directory: ${{ inputs.path }}
         env:
-          PACK_COMMAND: ${{ inputs.pack-command }}
+          PACK_OUTPUT: ${{ inputs.pack-output }}
+          PATH_INPUT: ${{ inputs.path }}
         run: |
-          echo "Running pack command: ${PACK_COMMAND}"
-          eval "${PACK_COMMAND}"
+          tar -czf "${PACK_OUTPUT}" -C "${PATH_INPUT}" .
+          echo "Packed: ${PATH_INPUT} -> ${PACK_OUTPUT}"
 
       - name: Push Artifact
         id: push
