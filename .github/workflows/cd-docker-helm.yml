@@ -96,6 +96,11 @@ on:
         description: "OCI registry for private Helm charts (e.g. ghcr.io)"
         required: false
         type: string
+      helm-version:
+        description: "Helm version to install (e.g. v3.17.3)"
+        required: false
+        type: string
+        default: latest
     secrets:
       REGISTRY_USERNAME:
         description: "Registry username (optional, defaults to github.repository_owner)"
@@ -161,6 +166,7 @@ jobs:
       environment: ${{ inputs.deploy-environment }}
       runner: ${{ inputs.deploy-runner }}
       registry: ${{ inputs.helm-registry }}
+      helm-version: ${{ inputs.helm-version }}
     secrets:
       KUBECONFIG: ${{ secrets.KUBECONFIG }}
       REGISTRY_USERNAME: ${{ secrets.HELM_REGISTRY_USERNAME }}

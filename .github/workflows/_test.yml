@@ -133,6 +133,7 @@ jobs:
       release-name: test-release
       chart: oci://ghcr.io/stakater/charts/application
       namespace: test
+      helm-version: "v3.17.3"
       set-values: |
         applicationName=test
         deployment.image.repository=nginx
