@@ -200,25 +200,31 @@ jobs:
     name: Test oci-push
     uses: ./.github/workflows/oci-push.yml
     with:
-      dry-run: ${{ inputs.dry-run }}
       artifact: ghcr.io/${{ github.repository }}/test-oci
       path: test/helm
       version: 0.1.0
       pack-output: test-oci-0.1.0.tgz
       artifact-type: application/vnd.cncf.helm.chart.content.v1.tar+gzip
+      # renovate: datasource=github-releases depName=oras-project/oras
+      oras-version: 1.2.2
     permissions:
       contents: read
       packages: write
 
   test-oci-push-verify:
     name: Test oci-push (verify)
-    if: inputs.dry-run == false
     needs: [test-oci-push]
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: read
     steps:
+      - name: Install ORAS
+        uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
+        with:
+          # renovate: datasource=github-releases depName=oras-project/oras
+          version: 1.2.2
+
       - name: Login to GHCR
         shell: bash
         env:
@@ -239,3 +245,42 @@ jobs:
           ls -la test-oci-0.1.0.tgz
           tar -tzf test-oci-0.1.0.tgz | head -5
           echo "Artifact successfully pulled and verified"
+
+  test-helm-push:
+    name: Test helm-push
+    uses: ./.github/workflows/helm-push.yml
+    with:
+      chart-path: test/helm
+      version: "0.1.0"
+      registry: ghcr.io
+      repository: ${{ github.repository }}/test-helm-push
+    permissions:
+      contents: read
+      packages: write
+
+  test-helm-push-verify:
+    name: Test helm-push (verify)
+    needs: [test-helm-push]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Setup Helm
+        uses: Azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        with:
+          version: latest
+
+      - name: Login to GHCR with Helm
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "${GITHUB_TOKEN}" | helm registry login ghcr.io \
+            --username "${{ github.repository_owner }}" \
+            --password-stdin
+
+      - name: Pull chart from OCI registry
+        shell: bash
+        run: |
+          helm template "oci://ghcr.io/${{ github.repository }}/test-helm-push/test-chart" --version 0.1.0

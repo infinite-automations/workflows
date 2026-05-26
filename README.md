@@ -21,6 +21,8 @@ Centralized, reusable GitHub Actions workflows for the [infinite-automations](ht
 | [`build-dotnet.yml`](.github/workflows/build-dotnet.yml)     | .NET restore, build, test, publish with artifact upload                                                    |
 | [`docker.yml`](.github/workflows/docker.yml)                 | Docker build & push with metadata, Buildx, and GHA cache                                                   |
 | [`oras-tag.yml`](.github/workflows/oras-tag.yml)             | OCI image retagging via [ORAS](https://oras.land) (retag without rebuild)                                  |
+| [`oci-push.yml`](.github/workflows/oci-push.yml)             | Pack directory into .tgz and push to OCI registry via ORAS                                                 |
+| [`helm-push.yml`](.github/workflows/helm-push.yml)           | Package and push Helm charts to OCI registries                                                             |
 | [`deploy-helm.yml`](.github/workflows/deploy-helm.yml)       | Helm deployment with optional registry/kubeconfig auth                                                     |
 | [`docs-action.yml`](.github/workflows/docs-action.yml)       | Documentation for GitHub Actions/Workflows via [action-docs](https://github.com/npalm/action-docs)         |
 | [`docs-terraform.yml`](.github/workflows/docs-terraform.yml) | Documentation for Terraform modules via [terraform-docs](https://github.com/terraform-docs/terraform-docs) |

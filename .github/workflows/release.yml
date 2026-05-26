@@ -112,7 +112,7 @@ on:
         value: ${{ jobs.release.outputs.patch }}
 
 jobs:
-  release:
+  release: # zizmor: ignore[secrets-outside-env]
     name: Semantic Release
     runs-on: ubuntu-latest
     outputs:
