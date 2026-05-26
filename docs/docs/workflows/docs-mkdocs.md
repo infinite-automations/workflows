@@ -4,6 +4,7 @@
 
 | name | description | type | required | default |
 | --- | --- | --- | --- | --- |
+| `ref` | <p>Git ref to checkout (empty = checkout action default)</p> | `string` | `false` | `""` |
 | `dry-run` | <p>Run in dry-run mode (build but do not deploy)</p> | `boolean` | `false` | `false` |
 | `docs-dir` | <p>Directory containing mkdocs.yml</p> | `string` | `false` | `docs` |
 | `python-version` | <p>Python version to use for MkDocs</p> | `string` | `false` | `3.x` |
@@ -38,6 +39,13 @@ jobs:
   job1:
     uses: infinite-automations/workflows/.github/workflows/docs-mkdocs.yml@vMAJOR
     with:
+      ref:
+      # Git ref to checkout (empty = checkout action default)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
       dry-run:
       # Run in dry-run mode (build but do not deploy)
       #

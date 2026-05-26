@@ -4,6 +4,7 @@
 
 | name | description | type | required | default |
 | --- | --- | --- | --- | --- |
+| `ref` | <p>Git ref to checkout (empty = checkout action default)</p> | `string` | `false` | `""` |
 | `dotnet-version` | <p>The .NET SDK version to install</p> | `string` | `false` | `""` |
 | `working-directory` | <p>Working directory containing the .NET solution/project</p> | `string` | `false` | `src` |
 | `build-configuration` | <p>Build configuration (e.g. Release, Debug)</p> | `string` | `false` | `Release` |
@@ -27,6 +28,13 @@ jobs:
   job1:
     uses: infinite-automations/workflows/.github/workflows/build-dotnet.yml@vMAJOR
     with:
+      ref:
+      # Git ref to checkout (empty = checkout action default)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
       dotnet-version:
       # The .NET SDK version to install
       #

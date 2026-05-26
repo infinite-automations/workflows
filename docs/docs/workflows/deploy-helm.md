@@ -4,6 +4,7 @@
 
 | name | description | type | required | default |
 | --- | --- | --- | --- | --- |
+| `ref` | <p>Git ref to checkout (empty = checkout action default)</p> | `string` | `false` | `""` |
 | `dry-run` | <p>Run in dry-run mode (helm diff/template instead of upgrade)</p> | `boolean` | `false` | `false` |
 | `release-name` | <p>Helm release name</p> | `string` | `true` | `""` |
 | `chart` | <p>Helm chart reference (e.g. stakater/application or ./chart)</p> | `string` | `true` | `""` |
@@ -16,6 +17,7 @@
 | `environment` | <p>GitHub environment name for deployment protection</p> | `string` | `false` | `""` |
 | `runner` | <p>Runner label for the deploy job</p> | `string` | `false` | `ubuntu-latest` |
 | `registry` | <p>OCI registry to authenticate with for private charts (e.g. ghcr.io)</p> | `string` | `false` | `""` |
+| `helm-version` | <p>Helm version to install (e.g. v3.17.3)</p> | `string` | `false` | `latest` |
 
 
 ## Secrets
@@ -41,6 +43,13 @@ jobs:
   job1:
     uses: infinite-automations/workflows/.github/workflows/deploy-helm.yml@vMAJOR
     with:
+      ref:
+      # Git ref to checkout (empty = checkout action default)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
       dry-run:
       # Run in dry-run mode (helm diff/template instead of upgrade)
       #
@@ -124,6 +133,13 @@ jobs:
       # Type: string
       # Required: false
       # Default: ""
+
+      helm-version:
+      # Helm version to install (e.g. v3.17.3)
+      #
+      # Type: string
+      # Required: false
+      # Default: latest
 ```
 
 

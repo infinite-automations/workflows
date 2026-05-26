@@ -4,6 +4,7 @@
 
 | name | description | type | required | default |
 | --- | --- | --- | --- | --- |
+| `ref` | <p>Git ref to checkout in child workflows (empty = checkout action default)</p> | `string` | `false` | `""` |
 | `dry-run` | <p>Run in dry-run mode (lint runs normally, release is dry-run)</p> | `boolean` | `false` | `false` |
 | `skip-lint` | <p>Skip the lint job (useful when lint is run separately)</p> | `boolean` | `false` | `false` |
 | `source-file` | <p>Path to the action.yml file for docs generation</p> | `string` | `false` | `action.yml` |
@@ -43,6 +44,13 @@ jobs:
   job1:
     uses: infinite-automations/workflows/.github/workflows/ci-action.yml@vMAJOR
     with:
+      ref:
+      # Git ref to checkout in child workflows (empty = checkout action default)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
       dry-run:
       # Run in dry-run mode (lint runs normally, release is dry-run)
       #

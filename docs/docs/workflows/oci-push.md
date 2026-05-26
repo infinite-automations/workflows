@@ -4,6 +4,7 @@
 
 | name | description | type | required | default |
 | --- | --- | --- | --- | --- |
+| `ref` | <p>Git ref to checkout (empty = checkout action default)</p> | `string` | `false` | `""` |
 | `dry-run` | <p>Run in dry-run mode (pack but do not push)</p> | `boolean` | `false` | `false` |
 | `artifact` | <p>Full artifact reference without tag (e.g. ghcr.io/owner/repo/my-chart)</p> | `string` | `true` | `""` |
 | `path` | <p>Path to the directory or file to pack and push</p> | `string` | `true` | `""` |
@@ -12,9 +13,13 @@
 | `tags` | <p>Newline-separated list of additional tags to apply</p> | `string` | `false` | `""` |
 | `registry` | <p>Container registry to authenticate with</p> | `string` | `false` | `ghcr.io` |
 | `artifact-type` | <p>Artifact type to set in the OCI manifest (e.g. application/vnd.cncf.helm.config.v1+json)</p> | `string` | `false` | `""` |
-| `pack-command` | <p>Custom pack command to run before pushing (e.g. 'helm package .'). Working directory is set to the path input.</p> | `string` | `false` | `""` |
-| `pack-output` | <p>Path to the packed artifact file to push (relative to workspace). Required when pack-command is set.</p> | `string` | `false` | `""` |
+| `pack-output` | <p>Path to write the packed .tgz archive (relative to workspace). When set, the path input is packed into a .tgz at this location before pushing.</p> | `string` | `false` | `""` |
 | `annotations` | <p>Newline-separated list of annotations (key=value) to attach to the artifact</p> | `string` | `false` | `""` |
+| `download-artifact-name` | <p>Name of a build artifact to download before packing (empty to skip)</p> | `string` | `false` | `""` |
+| `download-all-artifacts` | <p>Download all artifacts before packing</p> | `boolean` | `false` | `false` |
+| `download-artifact-path` | <p>Path to download the artifact to (relative to workspace)</p> | `string` | `false` | `""` |
+| `download-artifact-merge-multiple` | <p>Merge multiple artifacts into a single directory</p> | `boolean` | `false` | `true` |
+| `download-artifact-continue-on-error` | <p>Continue workflow if artifact download fails</p> | `boolean` | `false` | `false` |
 | `oras-version` | <p>ORAS CLI version to install</p> | `string` | `false` | `1.2.2` |
 
 
@@ -42,6 +47,13 @@ jobs:
   job1:
     uses: infinite-automations/workflows/.github/workflows/oci-push.yml@vMAJOR
     with:
+      ref:
+      # Git ref to checkout (empty = checkout action default)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
       dry-run:
       # Run in dry-run mode (pack but do not push)
       #
@@ -98,15 +110,8 @@ jobs:
       # Required: false
       # Default: ""
 
-      pack-command:
-      # Custom pack command to run before pushing (e.g. 'helm package .'). Working directory is set to the path input.
-      #
-      # Type: string
-      # Required: false
-      # Default: ""
-
       pack-output:
-      # Path to the packed artifact file to push (relative to workspace). Required when pack-command is set.
+      # Path to write the packed .tgz archive (relative to workspace). When set, the path input is packed into a .tgz at this location before pushing.
       #
       # Type: string
       # Required: false
@@ -118,6 +123,41 @@ jobs:
       # Type: string
       # Required: false
       # Default: ""
+
+      download-artifact-name:
+      # Name of a build artifact to download before packing (empty to skip)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
+      download-all-artifacts:
+      # Download all artifacts before packing
+      #
+      # Type: boolean
+      # Required: false
+      # Default: false
+
+      download-artifact-path:
+      # Path to download the artifact to (relative to workspace)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
+      download-artifact-merge-multiple:
+      # Merge multiple artifacts into a single directory
+      #
+      # Type: boolean
+      # Required: false
+      # Default: true
+
+      download-artifact-continue-on-error:
+      # Continue workflow if artifact download fails
+      #
+      # Type: boolean
+      # Required: false
+      # Default: false
 
       oras-version:
       # ORAS CLI version to install

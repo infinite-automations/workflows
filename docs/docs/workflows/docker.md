@@ -4,6 +4,7 @@
 
 | name | description | type | required | default |
 | --- | --- | --- | --- | --- |
+| `ref` | <p>Git ref to checkout (empty = checkout action default)</p> | `string` | `false` | `""` |
 | `image` | <p>Full image name (e.g. ghcr.io/owner/repo)</p> | `string` | `false` | `ghcr.io/${{ github.repository }}` |
 | `context` | <p>Docker build context path</p> | `string` | `false` | `.` |
 | `file` | <p>Path to the Dockerfile (relative to context)</p> | `string` | `false` | `""` |
@@ -47,6 +48,13 @@ jobs:
   job1:
     uses: infinite-automations/workflows/.github/workflows/docker.yml@vMAJOR
     with:
+      ref:
+      # Git ref to checkout (empty = checkout action default)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
       image:
       # Full image name (e.g. ghcr.io/owner/repo)
       #

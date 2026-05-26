@@ -4,6 +4,7 @@
 
 | name | description | type | required | default |
 | --- | --- | --- | --- | --- |
+| `ref` | <p>Git ref to checkout in child workflows (empty = checkout action default)</p> | `string` | `false` | `""` |
 | `dry-run` | <p>Run in dry-run mode (do not tag or deploy)</p> | `boolean` | `false` | `false` |
 | `deploy-dry-run` | <p>Run deploy in dry-run mode (tag normally but only template/diff the Helm release)</p> | `boolean` | `false` | `false` |
 | `image` | <p>Full image name (e.g. ghcr.io/owner/repo)</p> | `string` | `false` | `ghcr.io/${{ github.repository }}` |
@@ -23,6 +24,7 @@
 | `deploy-environment` | <p>GitHub environment name for deployment protection</p> | `string` | `false` | `""` |
 | `deploy-runner` | <p>Runner label for the deploy job</p> | `string` | `false` | `ubuntu-latest` |
 | `helm-registry` | <p>OCI registry for private Helm charts (e.g. ghcr.io)</p> | `string` | `false` | `""` |
+| `helm-version` | <p>Helm version to install (e.g. v3.17.3)</p> | `string` | `false` | `latest` |
 
 
 ## Secrets
@@ -51,6 +53,13 @@ jobs:
   job1:
     uses: infinite-automations/workflows/.github/workflows/cd-docker-helm.yml@vMAJOR
     with:
+      ref:
+      # Git ref to checkout in child workflows (empty = checkout action default)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
       dry-run:
       # Run in dry-run mode (do not tag or deploy)
       #
@@ -183,6 +192,13 @@ jobs:
       # Type: string
       # Required: false
       # Default: ""
+
+      helm-version:
+      # Helm version to install (e.g. v3.17.3)
+      #
+      # Type: string
+      # Required: false
+      # Default: latest
 ```
 
 

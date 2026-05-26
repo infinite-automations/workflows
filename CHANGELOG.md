@@ -1,3 +1,15 @@
+## [1.3.0](https://github.com/infinite-automations/workflows/compare/v1.2.0...v1.3.0) (2026-05-26)
+
+### Features
+
+* add inputs for checkout refs ([0aff8be](https://github.com/infinite-automations/workflows/commit/0aff8be8b41237fa01e9072f14c7434bce779fd4))
+* **deploy-helm:** add helm-version input ([006fbc5](https://github.com/infinite-automations/workflows/commit/006fbc567514f96d1668b08b716479ff9d4b4450))
+* **helm-push:** add reusable workflow for Helm chart packaging and push ([2a031a6](https://github.com/infinite-automations/workflows/commit/2a031a61887bd20d55bd3df537cce015e5405fb7))
+
+### Bug Fixes
+
+* **oci-push:** replace eval with standard tar packing ([21cf5df](https://github.com/infinite-automations/workflows/commit/21cf5df7ac983e7f985621b92b98155ad6d2e5fe))
+
 ## [1.2.0](https://github.com/infinite-automations/workflows/compare/v1.1.0...v1.2.0) (2026-05-26)
 
 ### Features

@@ -4,6 +4,7 @@
 
 | name | description | type | required | default |
 | --- | --- | --- | --- | --- |
+| `ref` | <p>Git ref to checkout (empty = checkout action default)</p> | `string` | `false` | `""` |
 | `dry-run` | <p>Run semantic-release in dry-run mode</p> | `boolean` | `false` | `false` |
 | `extra-plugins` | <p>Newline-separated list of extra semantic-release plugins</p> | `string` | `false` | `""` |
 | `node-version` | <p>Node.js version to use</p> | `string` | `false` | `lts/*` |
@@ -49,6 +50,13 @@ jobs:
   job1:
     uses: infinite-automations/workflows/.github/workflows/release.yml@vMAJOR
     with:
+      ref:
+      # Git ref to checkout (empty = checkout action default)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
       dry-run:
       # Run semantic-release in dry-run mode
       #

@@ -4,6 +4,7 @@
 
 | name | description | type | required | default |
 | --- | --- | --- | --- | --- |
+| `ref` | <p>Git ref to checkout in child workflows (empty = checkout action default)</p> | `string` | `false` | `""` |
 | `dry-run` | <p>Run in dry-run mode (lint runs normally, release is dry-run)</p> | `boolean` | `false` | `false` |
 | `skip-lint` | <p>Skip the lint job (useful when lint is run separately)</p> | `boolean` | `false` | `false` |
 | `working-dir` | <p>Comma-separated list of directories for terraform-docs</p> | `string` | `false` | `.` |
@@ -39,6 +40,13 @@ jobs:
   job1:
     uses: infinite-automations/workflows/.github/workflows/ci-terraform-module.yml@vMAJOR
     with:
+      ref:
+      # Git ref to checkout in child workflows (empty = checkout action default)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
       dry-run:
       # Run in dry-run mode (lint runs normally, release is dry-run)
       #

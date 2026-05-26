@@ -4,6 +4,7 @@
 
 | name | description | type | required | default |
 | --- | --- | --- | --- | --- |
+| `ref` | <p>Git ref to checkout (empty = checkout action default)</p> | `string` | `false` | `""` |
 | `dry-run` | <p>Run in dry-run mode (generate docs but do not commit)</p> | `boolean` | `false` | `false` |
 | `source-file` | <p>Path to a single action.yml or workflow file (mutually exclusive with source-dir)</p> | `string` | `false` | `""` |
 | `readme-file` | <p>Path to the README file to update (used with source-file)</p> | `string` | `false` | `README.md` |
@@ -30,6 +31,13 @@ jobs:
   job1:
     uses: infinite-automations/workflows/.github/workflows/docs-action.yml@vMAJOR
     with:
+      ref:
+      # Git ref to checkout (empty = checkout action default)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
       dry-run:
       # Run in dry-run mode (generate docs but do not commit)
       #

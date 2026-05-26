@@ -4,6 +4,7 @@
 
 | name | description | type | required | default |
 | --- | --- | --- | --- | --- |
+| `ref` | <p>Git ref to checkout (empty = checkout action default)</p> | `string` | `false` | `""` |
 | `config-file` | <p>Path to the Super-Linter env configuration file</p> | `string` | `false` | `.github/linters/.super-linter.env` |
 | `validate-all-codebase` | <p>Validate all files (true) or only changed files (false)</p> | `boolean` | `false` | `true` |
 | `extra-env-vars` | <p>Newline-separated KEY=VALUE pairs to pass as additional env vars to Super-Linter</p> | `string` | `false` | `""` |
@@ -24,6 +25,13 @@ jobs:
   job1:
     uses: infinite-automations/workflows/.github/workflows/lint.yml@vMAJOR
     with:
+      ref:
+      # Git ref to checkout (empty = checkout action default)
+      #
+      # Type: string
+      # Required: false
+      # Default: ""
+
       config-file:
       # Path to the Super-Linter env configuration file
       #
