@@ -1,3 +1,13 @@
+## [1.2.0](https://github.com/infinite-automations/workflows/compare/v1.1.0...v1.2.0) (2026-05-26)
+
+### Features
+
+* **release:** add additional semantic release action inputs ([6634f41](https://github.com/infinite-automations/workflows/commit/6634f41fc53f38e3e7248bea5fa4e82be9e513dd))
+
+### Bug Fixes
+
+* **mkdocs:** remove standalone 'latest' version before deploying ([81c28ec](https://github.com/infinite-automations/workflows/commit/81c28ec4aee996117a6600549e35d0e733520196))
+
 ## [1.1.0](https://github.com/infinite-automations/workflows/compare/v1.0.1...v1.1.0) (2026-05-25)
 
 ### Features
