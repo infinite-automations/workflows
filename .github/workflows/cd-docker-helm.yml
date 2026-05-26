@@ -6,6 +6,10 @@ name: CD (Docker + Helm)
 on:
   workflow_call:
     inputs:
+      ref:
+        description: "Git ref to checkout in child workflows (empty = checkout action default)"
+        required: false
+        type: string
       dry-run:
         description: "Run in dry-run mode (do not tag or deploy)"
         required: false
@@ -144,6 +148,7 @@ jobs:
     if: ${{ !cancelled() && (needs.retag.result == 'success' || needs.retag.result == 'skipped') }}
     uses: ./.github/workflows/deploy-helm.yml
     with:
+      ref: ${{ inputs.ref }}
       dry-run: ${{ inputs.dry-run || inputs.deploy-dry-run }}
       release-name: ${{ inputs.release-name }}
       chart: ${{ inputs.chart }}

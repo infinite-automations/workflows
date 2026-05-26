@@ -8,6 +8,10 @@ name: Build (.NET)
 on:
   workflow_call:
     inputs:
+      ref:
+        description: "Git ref to checkout (empty = checkout action default)"
+        required: false
+        type: string
       dotnet-version:
         description: "The .NET SDK version to install"
         required: false
@@ -56,6 +60,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          ref: ${{ inputs.ref }}
           persist-credentials: false
 
       - name: Setup .NET

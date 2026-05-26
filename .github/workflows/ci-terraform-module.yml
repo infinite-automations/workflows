@@ -6,6 +6,10 @@ name: CI (Terraform Module)
 on:
   workflow_call:
     inputs:
+      ref:
+        description: "Git ref to checkout in child workflows (empty = checkout action default)"
+        required: false
+        type: string
       dry-run:
         description: "Run in dry-run mode (lint runs normally, release is dry-run)"
         required: false
@@ -73,6 +77,8 @@ jobs:
     name: Lint
     if: ${{ !inputs.skip-lint }}
     uses: ./.github/workflows/lint.yml
+    with:
+      ref: ${{ inputs.ref }}
     permissions:
       contents: read
       packages: read
@@ -84,6 +90,7 @@ jobs:
     if: ${{ !cancelled() && (inputs.skip-lint || needs.lint.result == 'success') }}
     uses: ./.github/workflows/docs-terraform.yml
     with:
+      ref: ${{ inputs.ref }}
       dry-run: ${{ inputs.dry-run }}
       working-dir: ${{ inputs.working-dir }}
       output-file: ${{ inputs.output-file }}
@@ -98,6 +105,7 @@ jobs:
     if: ${{ !cancelled() && (inputs.skip-lint || needs.lint.result == 'success') && needs.docs.result == 'success' }}
     uses: ./.github/workflows/release.yml
     with:
+      ref: ${{ inputs.ref }}
       dry-run: ${{ inputs.dry-run }}
       extra-plugins: ${{ inputs.semrel-extra-plugins }}
       node-version: ${{ inputs.node-version }}
