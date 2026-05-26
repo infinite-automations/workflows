@@ -170,6 +170,9 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git fetch origin "${INPUTS_DEPLOY_BRANCH}":"${INPUTS_DEPLOY_BRANCH}" 2>/dev/null || true
           if [[ "${SET_LATEST}" == "true" && "${DEPLOY_VERSION}" != "latest" ]]; then
+            # Remove 'latest' if it exists as a standalone version rather than an alias,
+            # otherwise --update-aliases fails with "alias already specified as a version".
+            mike delete --branch "${INPUTS_DEPLOY_BRANCH}" latest 2>/dev/null || true
             mike deploy --update --push --branch "${INPUTS_DEPLOY_BRANCH}" --update-aliases "${DEPLOY_VERSION}" latest
             mike set-default --push --branch "${INPUTS_DEPLOY_BRANCH}" latest
           elif [[ "${SET_LATEST}" == "true" && "${DEPLOY_VERSION}" == "latest" ]]; then
