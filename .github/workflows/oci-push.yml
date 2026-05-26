@@ -59,6 +59,33 @@ on:
         description: "Newline-separated list of annotations (key=value) to attach to the artifact"
         required: false
         type: string
+      download-artifact-name:
+        description: "Name of a build artifact to download before packing (empty to skip)"
+        required: false
+        type: string
+      download-all-artifacts:
+        description: "Download all artifacts before packing"
+        required: false
+        type: boolean
+        default: false
+      download-artifact-path:
+        description: "Path to download the artifact to (relative to workspace)"
+        required: false
+        type: string
+      download-artifact-merge-multiple:
+        description: "Merge multiple artifacts into a single directory"
+        required: false
+        type: boolean
+        default: true
+      download-artifact-continue-on-error:
+        description: "Continue workflow if artifact download fails"
+        required: false
+        type: boolean
+        default: false
+      helm-version:
+        description: "Helm version to install (empty to skip Helm installation)"
+        required: false
+        type: string
       oras-version:
         description: "ORAS CLI version to install"
         required: false
@@ -97,6 +124,21 @@ jobs:
         with:
           ref: ${{ inputs.ref }}
           persist-credentials: false
+
+      - name: Download Artifact
+        if: ${{ inputs.download-artifact-name != '' || inputs.download-all-artifacts }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: ${{ inputs.download-artifact-name }}
+          path: ${{ inputs.download-artifact-path }}
+          merge-multiple: ${{ inputs.download-artifact-merge-multiple }}
+        continue-on-error: ${{ inputs.download-artifact-continue-on-error }}
+
+      - name: Setup Helm
+        if: inputs.helm-version != ''
+        uses: azure/setup-helm@dda3372f752e03dde6b3237bc9431cdc2f7a02a2 # v5.0.0
+        with:
+          version: ${{ inputs.helm-version }}
 
       - name: Install ORAS
         uses: oras-project/setup-oras@38de303aac69abb66f3e6255b7198bff35f323e3 # v2.0.0
