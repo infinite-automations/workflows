@@ -1,3 +1,9 @@
+## [1.3.1](https://github.com/infinite-automations/workflows/compare/v1.3.0...v1.3.1) (2026-06-01)
+
+### Bug Fixes
+
+* **docs-action:** fix string replacement ([26294a9](https://github.com/infinite-automations/workflows/commit/26294a9c889c15aeb8feeef32b0ce2a0d80bac32))
+
 ## [1.3.0](https://github.com/infinite-automations/workflows/compare/v1.2.0...v1.3.0) (2026-05-26)
 
 ### Features

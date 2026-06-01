@@ -56,7 +56,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/ci-dotnet.yml@vMAJOR
+    uses: infinite-automations/workflows/.github/workflows/ci-dotnet.yml@v1.3.1
     with:
       ref:
       # Git ref to checkout in child workflows (empty = checkout action default)

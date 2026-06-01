@@ -26,7 +26,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/build-dotnet.yml@vMAJOR
+    uses: infinite-automations/workflows/.github/workflows/build-dotnet.yml@v1.3.1
     with:
       ref:
       # Git ref to checkout (empty = checkout action default)

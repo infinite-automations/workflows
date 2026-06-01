@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   lint:
-    uses: infinite-automations/workflows/.github/workflows/lint.yml@v1.0.0
+    uses: infinite-automations/workflows/.github/workflows/lint.yml@v1.3.1
     permissions:
       contents: read
       packages: read
@@ -49,7 +49,7 @@ jobs:
 
   docs:
     needs: [lint]
-    uses: infinite-automations/workflows/.github/workflows/docs-action.yml@v1.0.0
+    uses: infinite-automations/workflows/.github/workflows/docs-action.yml@v1.3.1
     with:
       dry-run: ${{ github.event_name == 'pull_request' }}
     permissions:
@@ -57,7 +57,7 @@ jobs:
 
   release:
     needs: [lint, test, docs]
-    uses: infinite-automations/workflows/.github/workflows/release.yml@v1.0.0
+    uses: infinite-automations/workflows/.github/workflows/release.yml@v1.3.1
     with:
       dry-run: ${{ github.event_name == 'pull_request' }}
       extra-plugins: |
@@ -92,7 +92,7 @@ concurrency:
 
 jobs:
   lint:
-    uses: infinite-automations/workflows/.github/workflows/lint.yml@v1.0.0
+    uses: infinite-automations/workflows/.github/workflows/lint.yml@v1.3.1
     permissions:
       contents: read
       packages: read
@@ -115,7 +115,7 @@ jobs:
 
   docs:
     needs: [lint]
-    uses: infinite-automations/workflows/.github/workflows/docs-terraform.yml@v1.0.0
+    uses: infinite-automations/workflows/.github/workflows/docs-terraform.yml@v1.3.1
     with:
       dry-run: ${{ github.event_name == 'pull_request' }}
       working-dir: ".,bootstrap,examples/full"
@@ -124,7 +124,7 @@ jobs:
 
   release:
     needs: [lint, test, docs]
-    uses: infinite-automations/workflows/.github/workflows/release.yml@v1.0.0
+    uses: infinite-automations/workflows/.github/workflows/release.yml@v1.3.1
     with:
       dry-run: ${{ github.event_name == 'pull_request' }}
     secrets:

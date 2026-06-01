@@ -51,7 +51,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/cd-docker-helm.yml@vMAJOR
+    uses: infinite-automations/workflows/.github/workflows/cd-docker-helm.yml@v1.3.1
     with:
       ref:
       # Git ref to checkout in child workflows (empty = checkout action default)
