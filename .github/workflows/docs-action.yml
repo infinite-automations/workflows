@@ -98,10 +98,6 @@ jobs:
             --source "${INPUTS_SOURCE_FILE}" \
             --toc-level "${{ inputs.toc-level }}" \
             --update-readme "${INPUTS_README_FILE}"
-          repo="${GITHUB_REPOSITORY}"
-          name="$(basename "${INPUTS_SOURCE_FILE}" .yml)"
-          name="$(basename "${name}" .yaml)"
-          sed -i "s|\*\*\*PROJECT\*\*\*@\*\*\*VERSION\*\*\*|${repo}/.github/workflows/${name}.yml@vMAJOR|g" "${INPUTS_README_FILE}"
         env:
           INPUTS_SOURCE_FILE: ${{ inputs.source-file }}
           INPUTS_README_FILE: ${{ inputs.readme-file }}
@@ -133,20 +129,34 @@ jobs:
           done
           echo "Generated ${count} doc(s)"
 
-      - name: Fix Usage Examples
-        if: inputs.source-dir != '' && inputs.docs-dir != ''
+      - name: Fix References in Generated Docs
+        if: (inputs.source-dir != '' && inputs.docs-dir != '') || (inputs.source-file != '' && inputs.source-dir == '')
         shell: bash
         env:
-          DOCS_DIR: ${{ inputs.docs-dir }}
+          INPUTS_SOURCE_DIR: ${{ inputs.source-dir }}
+          INPUTS_DOCS_DIR: ${{ inputs.docs-dir }}
+          INPUTS_SOURCE_FILE: ${{ inputs.source-file }}
+          INPUTS_README_FILE: ${{ inputs.readme-file }}
         run: |
           repo="${GITHUB_REPOSITORY}"
-          find "${DOCS_DIR}" -name '*.md' -exec \
-            sed -i "s|\*\*\*PROJECT\*\*\*@\*\*\*VERSION\*\*\*|${repo}/.github/workflows/FILE@vMAJOR|g" {} +
-          for file in "${DOCS_DIR}"/*.md; do
-            [[ -f "${file}" ]] || continue
-            name="$(basename "${file}" .md)"
-            sed -i "s|/FILE@|/${name}.yml@|g" "${file}"
-          done
+
+          replace_usage_placeholder() {
+            local target_file="$1"
+            local workflow_name="$2"
+            sed -i "s|\*\*\*PROJECT\*\*\*@\*\*\*VERSION\*\*\*|${repo}/.github/workflows/${workflow_name}.yml@VERSION|g" "${target_file}"
+          }
+
+          if [[ -n "${INPUTS_SOURCE_DIR}" && -n "${INPUTS_DOCS_DIR}" ]]; then
+            for file in "${INPUTS_DOCS_DIR}"/*.md; do
+              [[ -f "${file}" ]] || continue
+              name="$(basename "${file}" .md)"
+              replace_usage_placeholder "${file}" "${name}"
+            done
+          elif [[ -n "${INPUTS_SOURCE_FILE}" ]]; then
+            name="$(basename "${INPUTS_SOURCE_FILE}" .yml)"
+            name="$(basename "${name}" .yaml)"
+            replace_usage_placeholder "${INPUTS_README_FILE}" "${name}"
+          fi
 
       - name: Check For Changes
         id: changes

@@ -63,7 +63,7 @@ permissions: {}
 
 jobs:
   lint:
-    uses: infinite-automations/workflows/.github/workflows/lint.yml@v1.0.0
+    uses: infinite-automations/workflows/.github/workflows/lint.yml@v1.3.0
     permissions:
       contents: read
       packages: read
@@ -78,7 +78,7 @@ jobs:
 
   release:
     needs: [lint, test]
-    uses: infinite-automations/workflows/.github/workflows/release.yml@v1.0.0
+    uses: infinite-automations/workflows/.github/workflows/release.yml@v1.3.0
     with:
       dry-run: ${{ github.event_name == 'pull_request' }}
     secrets: inherit
@@ -101,7 +101,7 @@ on:
 
 jobs:
   ci:
-    uses: infinite-automations/workflows/.github/workflows/ci-action.yml@v1.0.0
+    uses: infinite-automations/workflows/.github/workflows/ci-action.yml@v1.3.0
     with:
       dry-run: ${{ github.event_name == 'pull_request' }}
     secrets: inherit

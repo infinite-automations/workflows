@@ -20,14 +20,14 @@
         "replacements": [
           {
             "files": ["docs/**/*.md"],
-            "from": "infinite-automations/workflows/.github/workflows/\\(.*\\)@v[0-9]+\\.[0-9]+\\.[0-9]+",
-            "to": "infinite-automations/workflows/.github/workflows/${1}@v${nextRelease.version}",
+            "from": "infinite-automations/workflows/\\.github/workflows/([^@\\s]+)@(?:VERSION|vMAJOR|v[0-9]+\\.[0-9]+\\.[0-9]+)",
+            "to": "infinite-automations/workflows/.github/workflows/$1@v${nextRelease.version}",
             "countMatches": true
           },
           {
             "files": ["README.md"],
-            "from": "infinite-automations/workflows/.github/workflows/\\(.*\\)@v[0-9]+\\.[0-9]+\\.[0-9]+",
-            "to": "infinite-automations/workflows/.github/workflows/${1}@v${nextRelease.version}",
+            "from": "infinite-automations/workflows/\\.github/workflows/([^@\\s]+)@(?:VERSION|vMAJOR|v[0-9]+\\.[0-9]+\\.[0-9]+)",
+            "to": "infinite-automations/workflows/.github/workflows/$1@v${nextRelease.version}",
             "countMatches": true
           }
         ]
