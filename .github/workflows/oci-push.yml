@@ -83,7 +83,7 @@ on:
         required: false
         type: string
         # renovate: datasource=github-releases depName=oras-project/oras
-        default: "1.2.2"
+        default: "1.3.3"
     secrets:
       REGISTRY_USERNAME:
         description: "Registry username (optional, defaults to github.repository_owner)"
