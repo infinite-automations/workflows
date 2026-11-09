@@ -20,7 +20,7 @@
 | `download-artifact-path` | <p>Path to download the artifact to (relative to workspace)</p> | `string` | `false` | `""` |
 | `download-artifact-merge-multiple` | <p>Merge multiple artifacts into a single directory</p> | `boolean` | `false` | `true` |
 | `download-artifact-continue-on-error` | <p>Continue workflow if artifact download fails</p> | `boolean` | `false` | `false` |
-| `oras-version` | <p>ORAS CLI version to install</p> | `string` | `false` | `1.2.2` |
+| `oras-version` | <p>ORAS CLI version to install</p> | `string` | `false` | `1.3.6` |
 
 
 ## Secrets
@@ -45,7 +45,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/oci-push.yml@v1.3.1
+    uses: infinite-automations/workflows/.github/workflows/oci-push.yml@v1.4.0
     with:
       ref:
       # Git ref to checkout (empty = checkout action default)
@@ -164,7 +164,7 @@ jobs:
       #
       # Type: string
       # Required: false
-      # Default: 1.2.2
+      # Default: 1.3.6
 ```
 
 

@@ -12,7 +12,7 @@
 | `source-tag` | <p>Source image tag to retag from (skips metadata-action resolution when set)</p> | `string` | `false` | `""` |
 | `tag-semver` | <p>Semver tag pattern for source resolution (must match docker workflow config)</p> | `string` | `false` | `{{version}}` |
 | `registry` | <p>Container registry to authenticate with</p> | `string` | `false` | `ghcr.io` |
-| `oras-version` | <p>ORAS CLI version to install</p> | `string` | `false` | `1.2.2` |
+| `oras-version` | <p>ORAS CLI version to install</p> | `string` | `false` | `1.3.6` |
 | `release-name` | <p>Helm release name</p> | `string` | `true` | `""` |
 | `chart` | <p>Helm chart reference</p> | `string` | `true` | `""` |
 | `chart-version` | <p>Helm chart version</p> | `string` | `false` | `""` |
@@ -51,7 +51,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/cd-docker-helm.yml@v1.3.1
+    uses: infinite-automations/workflows/.github/workflows/cd-docker-helm.yml@v1.4.0
     with:
       ref:
       # Git ref to checkout in child workflows (empty = checkout action default)
@@ -114,7 +114,7 @@ jobs:
       #
       # Type: string
       # Required: false
-      # Default: 1.2.2
+      # Default: 1.3.6
 
       release-name:
       # Helm release name

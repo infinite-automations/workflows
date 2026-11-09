@@ -10,7 +10,7 @@
 | `tag-semver` | <p>Semver tag pattern for source resolution (used only when source-tag is not set)</p> | `string` | `false` | `{{version}}` |
 | `tags` | <p>Newline-separated list of new tags to apply</p> | `string` | `false` | `""` |
 | `registry` | <p>Container registry to authenticate with</p> | `string` | `false` | `ghcr.io` |
-| `oras-version` | <p>ORAS CLI version to install</p> | `string` | `false` | `1.2.2` |
+| `oras-version` | <p>ORAS CLI version to install</p> | `string` | `false` | `1.3.6` |
 
 
 ## Secrets
@@ -33,7 +33,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/oras-tag.yml@v1.3.1
+    uses: infinite-automations/workflows/.github/workflows/oras-tag.yml@v1.4.0
     with:
       dry-run:
       # Run in dry-run mode (resolve and display but do not tag)
@@ -82,7 +82,7 @@ jobs:
       #
       # Type: string
       # Required: false
-      # Default: 1.2.2
+      # Default: 1.3.6
 ```
 
 

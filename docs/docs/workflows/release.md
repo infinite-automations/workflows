@@ -41,6 +41,13 @@
 | `major` | <p>Major version number</p> |
 | `minor` | <p>Minor version number</p> |
 | `patch` | <p>Patch version number</p> |
+| `channel` | <p>Distribution channel of the release</p> |
+| `notes` | <p>Release notes</p> |
+| `git-head` | <p>Commit SHA of the release</p> |
+| `git-tag` | <p>Git tag of the release</p> |
+| `last-release-version` | <p>Version of the previous release</p> |
+| `last-release-git-head` | <p>Commit SHA of the previous release</p> |
+| `last-release-git-tag` | <p>Git tag of the previous release</p> |
 
 
 ## Usage
@@ -48,7 +55,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/release.yml@v1.3.1
+    uses: infinite-automations/workflows/.github/workflows/release.yml@v1.4.0
     with:
       ref:
       # Git ref to checkout (empty = checkout action default)

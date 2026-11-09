@@ -23,7 +23,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/lint.yml@v1.3.1
+    uses: infinite-automations/workflows/.github/workflows/lint.yml@v1.4.0
     with:
       ref:
       # Git ref to checkout (empty = checkout action default)

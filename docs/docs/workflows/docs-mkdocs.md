@@ -12,9 +12,9 @@
 | `deploy-prefix` | <p>Subdirectory on deploy-branch for preview deploys (empty = deploy to root)</p> | `string` | `false` | `""` |
 | `deploy-version` | <p>Version label for mike versioned deploy (empty = unversioned deploy)</p> | `string` | `false` | `""` |
 | `set-latest` | <p>Set this version as latest (for root index). Only true for release deploys.</p> | `boolean` | `false` | `false` |
-| `mike-version` | <p>mike version to install for versioned deploys (empty = skip install)</p> | `string` | `false` | `2.1.3` |
+| `mike-version` | <p>mike version to install for versioned deploys (empty = skip install)</p> | `string` | `false` | `2.2.0` |
 | `mkdocs-version` | <p>MkDocs version to install (empty = skip install)</p> | `string` | `false` | `1.6.1` |
-| `mkdocs-material-version` | <p>MkDocs Material version to install (empty = skip install)</p> | `string` | `false` | `9.7.6` |
+| `mkdocs-material-version` | <p>MkDocs Material version to install (empty = skip install)</p> | `string` | `false` | `9.8.1` |
 | `pip-plugins` | <p>Space-separated list of additional pip packages to install (MkDocs plugins)</p> | `string` | `false` | `""` |
 | `upload-artifact-name` | <p>Name of the artifact to upload with built site</p> | `string` | `false` | `docs-site` |
 | `download-artifact-name` | <p>Name of a build artifact to download before building (empty to skip)</p> | `string` | `false` | `""` |
@@ -37,7 +37,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/docs-mkdocs.yml@v1.3.1
+    uses: infinite-automations/workflows/.github/workflows/docs-mkdocs.yml@v1.4.0
     with:
       ref:
       # Git ref to checkout (empty = checkout action default)
@@ -100,7 +100,7 @@ jobs:
       #
       # Type: string
       # Required: false
-      # Default: 2.1.3
+      # Default: 2.2.0
 
       mkdocs-version:
       # MkDocs version to install (empty = skip install)
@@ -114,7 +114,7 @@ jobs:
       #
       # Type: string
       # Required: false
-      # Default: 9.7.6
+      # Default: 9.8.1
 
       pip-plugins:
       # Space-separated list of additional pip packages to install (MkDocs plugins)

@@ -21,7 +21,7 @@ on:
 
 jobs:
   lint:
-    uses: infinite-automations/workflows/.github/workflows/lint.yml@v1.3.1
+    uses: infinite-automations/workflows/.github/workflows/lint.yml@v1.4.0
     permissions:
       contents: read
       packages: read
@@ -29,7 +29,7 @@ jobs:
 
   release:
     needs: [lint]
-    uses: infinite-automations/workflows/.github/workflows/release.yml@v1.3.1
+    uses: infinite-automations/workflows/.github/workflows/release.yml@v1.4.0
     with:
       dry-run: ${{ github.event_name == 'pull_request' }}
     secrets: inherit
