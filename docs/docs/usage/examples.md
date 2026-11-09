@@ -61,7 +61,7 @@ jobs:
     with:
       dry-run: ${{ github.event_name == 'pull_request' }}
       extra-plugins: |
-        conventional-changelog-conventionalcommits@7.0.2
+        conventional-changelog-conventionalcommits@10.4.1
         semantic-release-major-tag@0.3.2
         semantic-release-replace-plugin@1.2.7
     secrets:
