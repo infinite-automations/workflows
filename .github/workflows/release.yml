@@ -110,6 +110,27 @@ on:
       patch:
         description: "Patch version number"
         value: ${{ jobs.release.outputs.patch }}
+      channel:
+        description: "Distribution channel of the release"
+        value: ${{ jobs.release.outputs.channel }}
+      notes:
+        description: "Release notes"
+        value: ${{ jobs.release.outputs.notes }}
+      git-head:
+        description: "Commit SHA of the release"
+        value: ${{ jobs.release.outputs.git-head }}
+      git-tag:
+        description: "Git tag of the release"
+        value: ${{ jobs.release.outputs.git-tag }}
+      last-release-version:
+        description: "Version of the previous release"
+        value: ${{ jobs.release.outputs.last-release-version }}
+      last-release-git-head:
+        description: "Commit SHA of the previous release"
+        value: ${{ jobs.release.outputs.last-release-git-head }}
+      last-release-git-tag:
+        description: "Git tag of the previous release"
+        value: ${{ jobs.release.outputs.last-release-git-tag }}
 
 jobs:
   release: # zizmor: ignore[secrets-outside-env]
@@ -121,6 +142,13 @@ jobs:
       major: ${{ steps.semantic-release.outputs.new_release_major_version }}
       minor: ${{ steps.semantic-release.outputs.new_release_minor_version }}
       patch: ${{ steps.semantic-release.outputs.new_release_patch_version }}
+      channel: ${{ steps.semantic-release.outputs.new_release_channel }}
+      notes: ${{ steps.semantic-release.outputs.new_release_notes }}
+      git-head: ${{ steps.semantic-release.outputs.new_release_git_head }}
+      git-tag: ${{ steps.semantic-release.outputs.new_release_git_tag }}
+      last-release-version: ${{ steps.semantic-release.outputs.last_release_version }}
+      last-release-git-head: ${{ steps.semantic-release.outputs.last_release_git_head }}
+      last-release-git-tag: ${{ steps.semantic-release.outputs.last_release_git_tag }}
     env:
       HAS_APP_CREDENTIALS: ${{ secrets.APP_ID != '' && secrets.APP_PRIVATE_KEY != '' }}
     steps:

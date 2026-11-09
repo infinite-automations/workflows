@@ -99,13 +99,14 @@ jobs:
 
   docs-deploy:
     name: Deploy Docs
+    if: needs.release.outputs.published
     needs:
       - release
     uses: ./.github/workflows/docs-mkdocs.yml
     with:
-      ref: ${{ needs.release.outputs.version != '' && format('v{0}', needs.release.outputs.version) || github.ref_name }}
+      ref: ${{ needs.release.outputs.git-tag }}
       deploy-branch: gh-pages
-      deploy-version: ${{ needs.release.outputs.version || github.ref_name }}
+      deploy-version: ${{ needs.release.outputs.version }}
       set-latest: true
       pip-plugins: mkdocs-awesome-pages-plugin
       upload-artifact-name: docs-site
