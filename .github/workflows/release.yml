@@ -18,7 +18,7 @@ on:
         type: boolean
         default: false
       extra-plugins:
-        description: "Newline-separated list of extra semantic-release plugins"
+        description: "Newline-separated list of extra semantic-release plugins (blank lines and full-line comments are ignored)"
         required: false
         type: string
       node-version:
@@ -55,10 +55,6 @@ on:
         type: string
       branches:
         description: "Branches on which releases should happen (semantic-release v16+, JSON array or string)"
-        required: false
-        type: string
-      branch:
-        description: "Branch on which releases should happen (semantic-release older than v16)"
         required: false
         type: string
       working-directory:
@@ -189,23 +185,49 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
 
+      - name: Prepare Release Plugins
+        id: release-plugins
+        shell: bash
+        env:
+          DEFAULT_PLUGINS: |
+            # renovate: datasource=npm depName=@semantic-release/commit-analyzer
+            @semantic-release/commit-analyzer@13.0.1
+            # renovate: datasource=npm depName=@semantic-release/release-notes-generator
+            @semantic-release/release-notes-generator@14.1.1
+            # renovate: datasource=npm depName=@semantic-release/changelog
+            @semantic-release/changelog@7.0.0
+            # renovate: datasource=npm depName=semantic-release-replace-plugin
+            semantic-release-replace-plugin@1.2.7
+            # renovate: datasource=npm depName=@semantic-release/git
+            @semantic-release/git@11.0.1
+            # renovate: datasource=npm depName=@semantic-release/github
+            @semantic-release/github@12.0.10
+            # renovate: datasource=npm depName=semantic-release-major-tag
+            semantic-release-major-tag@0.3.2
+            # renovate: datasource=npm depName=conventional-changelog-conventionalcommits
+            conventional-changelog-conventionalcommits@7.0.2
+          EXTRA_PLUGINS: ${{ inputs.extra-plugins }}
+        run: |
+          node <<'NODE'
+          const { appendFileSync } = require('node:fs');
+          const { randomUUID } = require('node:crypto');
+          const plugins = [process.env.DEFAULT_PLUGINS, process.env.EXTRA_PLUGINS]
+            .join('\n')
+            .split(/\r?\n/)
+            .map(line => line.trim())
+            .filter(line => line && !line.startsWith('#'))
+            .join('\n');
+          const delimiter = randomUUID();
+          appendFileSync(process.env.GITHUB_OUTPUT, `plugins<<${delimiter}\n${plugins}\n${delimiter}\n`);
+          NODE
+
       - name: Semantic Release
         id: semantic-release
         uses: cycjimmy/semantic-release-action@ad51787758d9654d5a75150a89a6fa9b3ccef95e # v8.1.4
         with:
           semantic_version: ${{ inputs.semantic-version }}
           branches: ${{ inputs.branches }}
-          branch: ${{ inputs.branch }}
-          extra_plugins: |
-            @semantic-release/commit-analyzer@13.0.1
-            @semantic-release/release-notes-generator@14.1.1
-            @semantic-release/changelog@7.0.0
-            semantic-release-replace-plugin@1.2.7
-            @semantic-release/git@11.0.1
-            @semantic-release/github@12.0.10
-            semantic-release-major-tag@0.3.2
-            conventional-changelog-conventionalcommits@10.4.1
-            ${{ inputs.extra-plugins }}
+          extra_plugins: ${{ steps.release-plugins.outputs.plugins }}
           extends: ${{ inputs.extends }}
           dry_run: ${{ inputs.dry-run }}
           ci: ${{ inputs.ci }}

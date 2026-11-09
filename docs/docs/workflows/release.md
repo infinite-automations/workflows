@@ -6,7 +6,7 @@
 | --- | --- | --- | --- | --- |
 | `ref` | <p>Git ref to checkout (empty = checkout action default)</p> | `string` | `false` | `""` |
 | `dry-run` | <p>Run semantic-release in dry-run mode</p> | `boolean` | `false` | `false` |
-| `extra-plugins` | <p>Newline-separated list of extra semantic-release plugins</p> | `string` | `false` | `""` |
+| `extra-plugins` | <p>Newline-separated list of extra semantic-release plugins (blank lines and full-line comments are ignored)</p> | `string` | `false` | `""` |
 | `node-version` | <p>Node.js version to use</p> | `string` | `false` | `lts/*` |
 | `download-artifact-name` | <p>Name of a build artifact to download before releasing (empty to skip)</p> | `string` | `false` | `""` |
 | `download-all-artifacts` | <p>Download all artifacts before releasing (ignored if download-artifact-name is set)</p> | `boolean` | `false` | `false` |
@@ -72,7 +72,7 @@ jobs:
       # Default: false
 
       extra-plugins:
-      # Newline-separated list of extra semantic-release plugins
+      # Newline-separated list of extra semantic-release plugins (blank lines and full-line comments are ignored)
       #
       # Type: string
       # Required: false
@@ -183,6 +183,5 @@ jobs:
       # Required: false
       # Default: ""
 ```
-
 
 
