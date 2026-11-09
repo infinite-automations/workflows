@@ -3,21 +3,15 @@
   "extends": [
     "github>infinite-automations/renovate-configs",
     "github>infinite-automations/renovate-configs:customManagers/workflowVersionPin",
+    "github>infinite-automations/renovate-configs:customManagers/commentManager(/^docs/.+\\.md$/)",
     ":automergeAll"
   ],
   "ignorePaths": ["test/**"],
-  "customManagers": [
+  "packageRules": [
     {
-      "customType": "regex",
-      "description": "Update pinned semantic-release plugins",
-      "managerFilePatterns": [
-        "/^\\.github/workflows/.+\\.yml$/",
-        "/^docs/.+\\.md$/"
-      ],
-      "matchStrings": [
-        "(?<depName>(?:@[^/\\s]+/)?[^@\\s]+)@(?<currentValue>\\d+\\.\\d+\\.\\d+)"
-      ],
-      "datasourceTemplate": "npm"
+      "description": "Keep the preset compatible with the release-notes generator's changelog writer",
+      "matchPackageNames": ["conventional-changelog-conventionalcommits"],
+      "allowedVersions": "<8.0.0"
     }
   ]
 }
