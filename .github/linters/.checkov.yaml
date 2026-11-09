@@ -1,3 +1,5 @@
 ---
+# Don't report passed checks in output
+quiet: true
 skip-check:
   - CKV2_GHA_1 # Permissions are set by callers of reusable workflows

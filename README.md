@@ -127,16 +127,11 @@ The same file is used for [local linting](#local-linting) via Docker.
 ./scripts/lint-local.sh
 ```
 
-Or directly with Docker:
-
-```bash
-docker run --rm \
-  -e RUN_LOCAL=true \
-  -e DEFAULT_BRANCH=main \
-  --env-file .github/linters/.super-linter.env \
-  -v "$(pwd):/tmp/lint" \
-  ghcr.io/super-linter/super-linter:v8.6.0
-```
+The script reads the Super-Linter version from [`lint.yml`](.github/workflows/lint.yml)
+and loads variables from [`.super-linter.env`](.github/linters/.super-linter.env).
+It adds only `RUN_LOCAL=true`, `DEFAULT_BRANCH=main`, and
+`VALIDATE_ALL_CODEBASE=true` for local linting. It accepts no arguments and does
+not enable fix mode.
 
 ## Design Principles
 
@@ -146,6 +141,17 @@ docker run --rm \
 - **Consistent** — inputs use `kebab-case`, secrets use `UPPER_SNAKE_CASE`
 - **Observable** — every workflow writes a standardized `$GITHUB_STEP_SUMMARY`
 - **Secure** — all actions pinned to SHA, minimal permissions
+
+Internal actions and reusable workflows use GitHub's `$/` self-repository syntax
+(requires GitHub Actions runner 2.336.0 or newer). The
+[actionlint configuration](.github/linters/actionlint.yml) includes a narrowly
+scoped compatibility exception until actionlint supports this syntax.
+
+Documentation generation installs `action-docs` in a workflow step with a
+Renovate-managed default version and an `action-docs-version` override. An inline
+zizmor exception permits this ad-hoc installation; transitive dependencies are
+not locked. GitHub App tokens explicitly request only the lint or release
+permissions documented in the corresponding workflow.
 
 ## Documentation
 

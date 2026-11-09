@@ -12,7 +12,7 @@ permissions: {}
 jobs:
   lint:
     name: Lint
-    uses: ./.github/workflows/lint.yml
+    uses: $/.github/workflows/lint.yml
     permissions:
       contents: read
       issues: write
@@ -29,7 +29,7 @@ jobs:
   test:
     name: Test
     needs: [lint]
-    uses: ./.github/workflows/_test.yml
+    uses: $/.github/workflows/_test.yml
     permissions:
       actions: read
       checks: write
@@ -45,7 +45,7 @@ jobs:
   docs:
     name: Workflow Docs
     needs: [lint]
-    uses: ./.github/workflows/docs-action.yml
+    uses: $/.github/workflows/docs-action.yml
     with:
       upload-artifact-name: workflow-docs
       docs-dir: docs/docs/workflows
@@ -61,7 +61,7 @@ jobs:
   docs-site:
     name: Build Docs Site
     needs: [lint, docs]
-    uses: ./.github/workflows/docs-mkdocs.yml
+    uses: $/.github/workflows/docs-mkdocs.yml
     with:
       pip-plugins: mkdocs-awesome-pages-plugin
       upload-artifact-name: docs-site
@@ -80,7 +80,7 @@ jobs:
   release:
     name: Release
     needs: [lint, test, docs-site]
-    uses: ./.github/workflows/release.yml
+    uses: $/.github/workflows/release.yml
     with:
       dry-run: ${{ github.event_name == 'pull_request' }}
       download-artifact-name: workflow-docs
@@ -102,7 +102,7 @@ jobs:
     if: needs.release.outputs.published
     needs:
       - release
-    uses: ./.github/workflows/docs-mkdocs.yml
+    uses: $/.github/workflows/docs-mkdocs.yml
     with:
       ref: ${{ needs.release.outputs.git-tag }}
       deploy-branch: gh-pages
