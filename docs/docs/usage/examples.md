@@ -61,9 +61,9 @@ jobs:
     with:
       dry-run: ${{ github.event_name == 'pull_request' }}
       extra-plugins: |
-        conventional-changelog-conventionalcommits
-        semantic-release-major-tag
-        semantic-release-replace-plugin
+        conventional-changelog-conventionalcommits@7.0.2
+        semantic-release-major-tag@0.3.2
+        semantic-release-replace-plugin@1.2.7
     secrets:
       APP_ID: ${{ secrets.APP_ID_SEMREL }}
       APP_PRIVATE_KEY: ${{ secrets.APP_KEY_SEMREL }}

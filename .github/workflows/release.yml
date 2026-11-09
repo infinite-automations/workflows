@@ -168,7 +168,16 @@ jobs:
           semantic_version: ${{ inputs.semantic-version }}
           branches: ${{ inputs.branches }}
           branch: ${{ inputs.branch }}
-          extra_plugins: ${{ inputs.extra-plugins }}
+          extra_plugins: |
+            @semantic-release/commit-analyzer@13.0.1
+            @semantic-release/release-notes-generator@14.1.1
+            @semantic-release/changelog@7.0.0
+            semantic-release-replace-plugin@1.2.7
+            @semantic-release/git@11.0.1
+            @semantic-release/github@12.0.10
+            semantic-release-major-tag@0.3.2
+            conventional-changelog-conventionalcommits@7.0.2
+            ${{ inputs.extra-plugins }}
           extends: ${{ inputs.extends }}
           dry_run: ${{ inputs.dry-run }}
           ci: ${{ inputs.ci }}

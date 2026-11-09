@@ -34,10 +34,6 @@ jobs:
     uses: ./.github/workflows/release.yml
     with:
       dry-run: ${{ inputs.dry-run }}
-      extra-plugins: |
-        conventional-changelog-conventionalcommits
-        semantic-release-replace-plugin
-        semantic-release-major-tag
     permissions:
       contents: write
       issues: write
@@ -50,10 +46,6 @@ jobs:
       dry-run: ${{ inputs.dry-run }}
       working-directory: test/semrel
       tag-format: "test-semrel-v${version}"
-      extra-plugins: |
-        conventional-changelog-conventionalcommits
-        semantic-release-replace-plugin
-        semantic-release-major-tag
     permissions:
       contents: write
       issues: write
@@ -66,10 +58,6 @@ jobs:
       dry-run: ${{ inputs.dry-run }}
       skip-lint: true
       docs-artifact-name: test-docs-ci-terraform
-      semrel-extra-plugins: |
-        conventional-changelog-conventionalcommits
-        semantic-release-replace-plugin
-        semantic-release-major-tag
     permissions:
       contents: write
       issues: write
@@ -84,10 +72,6 @@ jobs:
       dry-run: ${{ inputs.dry-run }}
       skip-lint: true
       docs-artifact-name: test-docs-ci-action
-      semrel-extra-plugins: |
-        conventional-changelog-conventionalcommits
-        semantic-release-replace-plugin
-        semantic-release-major-tag
     permissions:
       contents: write
       issues: write
@@ -151,10 +135,6 @@ jobs:
       docker-context: test/docker
       artifact-name: test-ci-dotnet-build
       docker-image: ghcr.io/${{ github.repository }}/test-dotnet
-      semrel-extra-plugins: |
-        conventional-changelog-conventionalcommits
-        semantic-release-replace-plugin
-        semantic-release-major-tag
     permissions:
       actions: read
       checks: write
