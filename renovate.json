@@ -1,15 +1,23 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>infinite-automations/renovate-configs", ":automergeAll"],
+  "extends": [
+    "github>infinite-automations/renovate-configs",
+    "github>infinite-automations/renovate-configs:customManagers/workflowVersionPin",
+    ":automergeAll"
+  ],
   "ignorePaths": ["test/**"],
   "customManagers": [
     {
       "customType": "regex",
-      "description": "Update pinned versions in workflow input defaults",
-      "managerFilePatterns": ["/^\\.github/workflows/.+\\.yml$/"],
+      "description": "Update pinned semantic-release plugins",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/.+\\.yml$/",
+        "/^docs/.+\\.md$/"
+      ],
       "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)\\n\\s+\\S+:\\s*\"(?<currentValue>[^\"]+)\""
-      ]
+        "(?<depName>(?:@[^/\\s]+/)?[^@\\s]+)@(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "npm"
     }
   ]
 }
