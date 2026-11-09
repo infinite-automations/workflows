@@ -45,7 +45,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/oci-push.yml@v1.4.0
+    uses: infinite-automations/workflows/.github/workflows/oci-push.yml@v1.5.0
     with:
       ref:
       # Git ref to checkout (empty = checkout action default)

@@ -42,7 +42,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/ci-action.yml@v1.4.0
+    uses: infinite-automations/workflows/.github/workflows/ci-action.yml@v1.5.0
     with:
       ref:
       # Git ref to checkout in child workflows (empty = checkout action default)

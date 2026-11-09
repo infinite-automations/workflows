@@ -15,7 +15,6 @@
 | `download-artifact-continue-on-error` | <p>Continue workflow if artifact download fails</p> | `boolean` | `false` | `false` |
 | `semantic-version` | <p>Version range for semantic-release (e.g. '19.0.5')</p> | `string` | `false` | `""` |
 | `branches` | <p>Branches on which releases should happen (semantic-release v16+, JSON array or string)</p> | `string` | `false` | `""` |
-| `branch` | <p>Branch on which releases should happen (semantic-release older than v16)</p> | `string` | `false` | `""` |
 | `working-directory` | <p>Working directory for semantic release (useful for monorepos)</p> | `string` | `false` | `""` |
 | `tag-format` | <p>Tag format override, useful for monorepos (e.g. 'my-package-v${version}')</p> | `string` | `false` | `""` |
 | `extends` | <p>Newline-separated list of sharable configurations to extend</p> | `string` | `false` | `""` |
@@ -55,7 +54,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/release.yml@v1.4.0
+    uses: infinite-automations/workflows/.github/workflows/release.yml@v1.5.0
     with:
       ref:
       # Git ref to checkout (empty = checkout action default)
@@ -134,13 +133,6 @@ jobs:
       # Required: false
       # Default: ""
 
-      branch:
-      # Branch on which releases should happen (semantic-release older than v16)
-      #
-      # Type: string
-      # Required: false
-      # Default: ""
-
       working-directory:
       # Working directory for semantic release (useful for monorepos)
       #
@@ -183,5 +175,6 @@ jobs:
       # Required: false
       # Default: ""
 ```
+
 
 

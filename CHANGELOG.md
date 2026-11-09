@@ -1,3 +1,9 @@
+## 1.5.0 (2026-11-09)
+
+* chore(deps): update dependency conventional-changelog-conventionalcommits to v10 (#69) ([9b729dc](https://github.com/infinite-automations/workflows/commit/9b729dc)), closes [#69](https://github.com/infinite-automations/workflows/issues/69)
+* chore(renovate): use annotation presets and restrict changelog versions ([d810380](https://github.com/infinite-automations/workflows/commit/d810380))
+* feat(release): support annotated extra plugin lists ([2812665](https://github.com/infinite-automations/workflows/commit/2812665))
+
 ## 1.4.0 (2026-11-09)
 
 * feat(release): extend outputs ([68faf14](https://github.com/infinite-automations/workflows/commit/68faf14))

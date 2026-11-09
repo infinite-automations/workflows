@@ -33,7 +33,7 @@
 ```yaml
 jobs:
   job1:
-    uses: infinite-automations/workflows/.github/workflows/oras-tag.yml@v1.4.0
+    uses: infinite-automations/workflows/.github/workflows/oras-tag.yml@v1.5.0
     with:
       dry-run:
       # Run in dry-run mode (resolve and display but do not tag)
