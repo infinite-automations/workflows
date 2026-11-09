@@ -14,7 +14,7 @@ on:
 jobs:
   test-docs-mkdocs:
     name: Test docs-mkdocs
-    uses: ./.github/workflows/docs-mkdocs.yml
+    uses: $/.github/workflows/docs-mkdocs.yml
     with:
       pip-plugins: mkdocs-awesome-pages-plugin
       upload-artifact-name: test-docs-mkdocs
@@ -23,7 +23,7 @@ jobs:
 
   test-docs-action:
     name: Test docs-action
-    uses: ./.github/workflows/docs-action.yml
+    uses: $/.github/workflows/docs-action.yml
     with:
       upload-artifact-name: test-docs-action
     permissions:
@@ -31,7 +31,7 @@ jobs:
 
   test-release:
     name: Test release
-    uses: ./.github/workflows/release.yml
+    uses: $/.github/workflows/release.yml
     with:
       dry-run: ${{ inputs.dry-run }}
     permissions:
@@ -41,7 +41,7 @@ jobs:
 
   test-release-working-directory:
     name: Test release (working-directory / monorepo)
-    uses: ./.github/workflows/release.yml
+    uses: $/.github/workflows/release.yml
     with:
       dry-run: ${{ inputs.dry-run }}
       working-directory: test/semrel
@@ -60,7 +60,7 @@ jobs:
 
   test-ci-terraform-module:
     name: Test ci-terraform-module
-    uses: ./.github/workflows/ci-terraform-module.yml
+    uses: $/.github/workflows/ci-terraform-module.yml
     with:
       dry-run: ${{ inputs.dry-run }}
       skip-lint: true
@@ -74,7 +74,7 @@ jobs:
 
   test-ci-action:
     name: Test ci-action
-    uses: ./.github/workflows/ci-action.yml
+    uses: $/.github/workflows/ci-action.yml
     with:
       dry-run: ${{ inputs.dry-run }}
       skip-lint: true
@@ -88,7 +88,7 @@ jobs:
 
   test-docs-terraform:
     name: Test docs-terraform
-    uses: ./.github/workflows/docs-terraform.yml
+    uses: $/.github/workflows/docs-terraform.yml
     with:
       dry-run: ${{ inputs.dry-run }}
       upload-artifact-name: test-docs-terraform
@@ -97,7 +97,7 @@ jobs:
 
   test-build-dotnet:
     name: Test build-dotnet
-    uses: ./.github/workflows/build-dotnet.yml
+    uses: $/.github/workflows/build-dotnet.yml
     with:
       working-directory: test/dotnet
       upload-artifact-name: test-build-dotnet
@@ -108,7 +108,7 @@ jobs:
 
   test-docker:
     name: Test docker
-    uses: ./.github/workflows/docker.yml
+    uses: $/.github/workflows/docker.yml
     with:
       context: test/docker
       image: ghcr.io/${{ github.repository }}/test
@@ -118,7 +118,7 @@ jobs:
 
   test-deploy-helm:
     name: Test deploy-helm
-    uses: ./.github/workflows/deploy-helm.yml
+    uses: $/.github/workflows/deploy-helm.yml
     with:
       dry-run: ${{ inputs.dry-run }}
       release-name: test-release
@@ -134,7 +134,7 @@ jobs:
 
   test-ci-dotnet:
     name: Test ci-dotnet
-    uses: ./.github/workflows/ci-dotnet.yml
+    uses: $/.github/workflows/ci-dotnet.yml
     with:
       dry-run: ${{ inputs.dry-run }}
       skip-lint: true
@@ -154,7 +154,7 @@ jobs:
   test-cd-docker-helm:
     name: Test cd-docker-helm
     needs: [test-docker]
-    uses: ./.github/workflows/cd-docker-helm.yml
+    uses: $/.github/workflows/cd-docker-helm.yml
     with:
       image: ghcr.io/${{ github.repository }}/test
       deploy-dry-run: true
@@ -174,7 +174,7 @@ jobs:
   test-oras-tag:
     name: Test oras-tag
     needs: [test-docker]
-    uses: ./.github/workflows/oras-tag.yml
+    uses: $/.github/workflows/oras-tag.yml
     with:
       image: ghcr.io/${{ github.repository }}/test
       tags: |
@@ -185,7 +185,7 @@ jobs:
 
   test-oci-push:
     name: Test oci-push
-    uses: ./.github/workflows/oci-push.yml
+    uses: $/.github/workflows/oci-push.yml
     with:
       artifact: ghcr.io/${{ github.repository }}/test-oci
       path: test/helm
@@ -235,7 +235,7 @@ jobs:
 
   test-helm-push:
     name: Test helm-push
-    uses: ./.github/workflows/helm-push.yml
+    uses: $/.github/workflows/helm-push.yml
     with:
       chart-path: test/helm
       version: "0.1.0"

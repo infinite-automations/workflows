@@ -87,7 +87,8 @@ jobs:
         shell: bash
         env:
           INPUTS_ACTION_DOCS_VERSION: ${{ inputs.action-docs-version }}
-        run: |
+        run:
+          | # zizmor: ignore[adhoc-packages] Version is configurable by callers; the default is pinned and Renovate-managed.
           npm install -g "action-docs@${INPUTS_ACTION_DOCS_VERSION}"
 
       - name: Generate Documentation (Single File)

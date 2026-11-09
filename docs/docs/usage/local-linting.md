@@ -9,23 +9,17 @@ Run the same Super-Linter configuration locally using Docker.
 
 ## Usage
 
-### Using the Script
-
 ```bash
 # From the repository root
 ./scripts/lint-local.sh
 ```
 
-### Using Docker Directly
-
-```bash
-docker run --rm \
-  -e RUN_LOCAL=true \
-  -e DEFAULT_BRANCH=main \
-  --env-file .github/linters/.super-linter.env \
-  -v "$(pwd):/tmp/lint" \
-  ghcr.io/super-linter/super-linter:v8.6.0
-```
+The script reads the Super-Linter version from
+[`lint.yml`](https://github.com/infinite-automations/workflows/blob/main/.github/workflows/lint.yml) and loads variables directly
+from [`.super-linter.env`](https://github.com/infinite-automations/workflows/blob/main/.github/linters/.super-linter.env).
+Only the local overrides `RUN_LOCAL=true`, `DEFAULT_BRANCH=main`, and
+`VALIDATE_ALL_CODEBASE=true` are added, so the entire repository is linted.
+The script accepts no arguments and does not enable fix mode.
 
 ## Configuration
 

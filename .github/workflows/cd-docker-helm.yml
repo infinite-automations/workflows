@@ -131,7 +131,7 @@ jobs:
   retag:
     name: Retag Image
     if: ${{ inputs.tags != '' }}
-    uses: ./.github/workflows/oras-tag.yml
+    uses: $/.github/workflows/oras-tag.yml
     with:
       dry-run: ${{ inputs.dry-run }}
       image: ${{ inputs.image }}
@@ -151,7 +151,7 @@ jobs:
     name: Deploy
     needs: [retag]
     if: ${{ !cancelled() && (needs.retag.result == 'success' || needs.retag.result == 'skipped') }}
-    uses: ./.github/workflows/deploy-helm.yml
+    uses: $/.github/workflows/deploy-helm.yml
     with:
       ref: ${{ inputs.ref }}
       dry-run: ${{ inputs.dry-run || inputs.deploy-dry-run }}
